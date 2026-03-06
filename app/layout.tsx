@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "../components/providers/AuthProvider";
 import { QueryProvider } from "../components/providers/QueryProvider";
-import { Toaster } from "sonner";
+import { GoogleAnalytics } from "../components/GoogleAnalytics";
+import dynamic from "next/dynamic";
+
+const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { ssr: false });
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Toaster position="bottom-right" richColors closeButton />
           </QueryProvider>
         </AuthProvider>
+        <GoogleAnalytics trackingId={process.env.NEXT_PUBLIC_GA_ID || ""} />
       </body>
     </html>
   );
