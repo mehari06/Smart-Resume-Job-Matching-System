@@ -1,0 +1,346 @@
+[
+    {
+        "id": "resume-001",
+        "userId": "user-001",
+        "candidateName": "Abebe Girma",
+        "email": "abebe.girma@example.com",
+        "targetRole": "Full Stack Developer",
+        "experienceYears": 3,
+        "education": "BSc Computer Science, Addis Ababa University (2022)",
+        "skills": [
+            "React",
+            "Node.js",
+            "TypeScript",
+            "PostgreSQL",
+            "REST APIs",
+            "Git",
+            "Docker"
+        ],
+        "experience": [
+            {
+                "title": "Junior Developer",
+                "company": "Logic Soft PLC",
+                "years": 2
+            },
+            {
+                "title": "Intern",
+                "company": "HahuCloud",
+                "years": 1
+            }
+        ],
+        "summary": "Passionate full-stack developer with 3 years of experience building web applications. Strong in React frontend and Node.js backend. Eager to work on impactful products.",
+        "fileName": "abebe_girma_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-01T10:00:00Z"
+    },
+    {
+        "id": "resume-002",
+        "userId": "user-002",
+        "candidateName": "Mekdes Tadesse",
+        "email": "mekdes.tadesse@example.com",
+        "targetRole": "Data Scientist",
+        "experienceYears": 2,
+        "education": "MSc Data Science, Addis Ababa University (2024)",
+        "skills": [
+            "Python",
+            "Machine Learning",
+            "NLP",
+            "scikit-learn",
+            "SQL",
+            "pandas",
+            "Tableau"
+        ],
+        "experience": [
+            {
+                "title": "Data Analyst Intern",
+                "company": "Shega Media",
+                "years": 1
+            },
+            {
+                "title": "Research Assistant",
+                "company": "AAU",
+                "years": 1
+            }
+        ],
+        "summary": "Data scientist with expertise in NLP and machine learning. Built text classification models for Amharic content. Passionate about data-driven decision making in African tech.",
+        "fileName": "mekdes_tadesse_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-02T11:00:00Z"
+    },
+    {
+        "id": "resume-003",
+        "userId": "user-003",
+        "candidateName": "Yonas Bekele",
+        "email": "yonas.bekele@example.com",
+        "targetRole": "DevOps Engineer",
+        "experienceYears": 4,
+        "education": "BSc Information Technology, Hawassa University (2021)",
+        "skills": [
+            "Kubernetes",
+            "Docker",
+            "Terraform",
+            "AWS",
+            "CI/CD",
+            "Linux",
+            "GitHub Actions",
+            "Ansible"
+        ],
+        "experience": [
+            {
+                "title": "System Administrator",
+                "company": "Ethio Telecom",
+                "years": 2
+            },
+            {
+                "title": "DevOps Engineer",
+                "company": "Freelance",
+                "years": 2
+            }
+        ],
+        "summary": "DevOps engineer with deep cloud and infrastructure experience. Built Kubernetes clusters and CI/CD pipelines for large-scale Ethiopian enterprises.",
+        "fileName": "yonas_bekele_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-01T09:00:00Z"
+    },
+    {
+        "id": "resume-004",
+        "userId": "user-004",
+        "candidateName": "Sara Hailu",
+        "email": "sara.hailu@example.com",
+        "targetRole": "UI/UX Designer",
+        "experienceYears": 2,
+        "education": "BA Visual Communication, Addis Ababa University (2023)",
+        "skills": [
+            "Figma",
+            "UX Research",
+            "Prototyping",
+            "Design Systems",
+            "Accessibility",
+            "Adobe XD",
+            "Wireframing"
+        ],
+        "experience": [
+            {
+                "title": "UX Designer",
+                "company": "Eshi Express",
+                "years": 1
+            },
+            {
+                "title": "Design Intern",
+                "company": "Geez AI Labs",
+                "years": 1
+            }
+        ],
+        "summary": "Creative UX designer passionate about building accessible, user-centered products for East African markets. Proficient in Figma with a strong design thinking foundation.",
+        "fileName": "sara_hailu_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-03T10:00:00Z"
+    },
+    {
+        "id": "resume-005",
+        "userId": "user-005",
+        "candidateName": "Dawit Alemu",
+        "email": "dawit.alemu@example.com",
+        "targetRole": "Machine Learning Engineer",
+        "experienceYears": 3,
+        "education": "BSc Computer Science (AI Track), iCog Labs Fellowship (2022)",
+        "skills": [
+            "Python",
+            "PyTorch",
+            "NLP",
+            "scikit-learn",
+            "Hugging Face",
+            "FastAPI",
+            "TF-IDF",
+            "pandas"
+        ],
+        "experience": [
+            {
+                "title": "ML Research Assistant",
+                "company": "iCog Labs",
+                "years": 2
+            },
+            {
+                "title": "Data Science Intern",
+                "company": "Shega Media",
+                "years": 1
+            }
+        ],
+        "summary": "ML engineer with a focus on NLP for low-resource African languages. Built TF-IDF pipelines and transformer models for Amharic text classification at iCog Labs.",
+        "fileName": "dawit_alemu_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-04T08:00:00Z"
+    },
+    {
+        "id": "resume-006",
+        "userId": "user-006",
+        "candidateName": "Hiwot Mengistu",
+        "email": "hiwot.mengistu@example.com",
+        "targetRole": "Mobile Developer",
+        "experienceYears": 2,
+        "education": "BSc Software Engineering, Jimma University (2023)",
+        "skills": [
+            "React Native",
+            "TypeScript",
+            "Redux",
+            "JavaScript",
+            "Firebase",
+            "REST APIs",
+            "Git"
+        ],
+        "experience": [
+            {
+                "title": "Mobile Developer",
+                "company": "Chapa",
+                "years": 1
+            },
+            {
+                "title": "App Developer Intern",
+                "company": "Freelance",
+                "years": 1
+            }
+        ],
+        "summary": "Mobile developer specializing in React Native for both Android and iOS. Built fintech apps with Chapa payment integration. Passionate about offline-first mobile experiences.",
+        "fileName": "hiwot_mengistu_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-02T14:00:00Z"
+    },
+    {
+        "id": "resume-007",
+        "userId": "user-007",
+        "candidateName": "Biruk Tesfaye",
+        "email": "biruk.tesfaye@example.com",
+        "targetRole": "Backend Developer",
+        "experienceYears": 3,
+        "education": "BSc Computer Science, Bahir Dar University (2022)",
+        "skills": [
+            "Python",
+            "Django",
+            "PostgreSQL",
+            "REST APIs",
+            "Redis",
+            "Celery",
+            "Docker",
+            "JWT"
+        ],
+        "experience": [
+            {
+                "title": "Backend Developer",
+                "company": "Afriwork",
+                "years": 2
+            },
+            {
+                "title": "Python Intern",
+                "company": "Kifiya",
+                "years": 1
+            }
+        ],
+        "summary": "Backend engineer with strong Python/Django expertise. Built scalable REST APIs handling thousands of requests per second for Afriwork's freelance marketplace.",
+        "fileName": "biruk_tesfaye_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-01T13:00:00Z"
+    },
+    {
+        "id": "resume-008",
+        "userId": "user-008",
+        "candidateName": "Liya Solomon",
+        "email": "liya.solomon@example.com",
+        "targetRole": "Product Manager",
+        "experienceYears": 4,
+        "education": "MBA, Addis Ababa University (2023)",
+        "skills": [
+            "Product Management",
+            "Agile",
+            "Jira",
+            "Data Analysis",
+            "User Stories",
+            "Roadmapping",
+            "Stakeholder Management"
+        ],
+        "experience": [
+            {
+                "title": "Associate Product Manager",
+                "company": "Kifiya",
+                "years": 2
+            },
+            {
+                "title": "Business Analyst",
+                "company": "Commercial Bank of Ethiopia",
+                "years": 2
+            }
+        ],
+        "summary": "Product manager with fintech expertise. Led product launches at Kifiya reaching 50,000+ users. Strong background in agile and data-driven product development.",
+        "fileName": "liya_solomon_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-03T15:00:00Z"
+    },
+    {
+        "id": "resume-009",
+        "userId": "user-009",
+        "candidateName": "Natnael Kebede",
+        "email": "natnael.kebede@example.com",
+        "targetRole": "Cybersecurity Analyst",
+        "experienceYears": 3,
+        "education": "BSc Computer Science (Security), Addis Ababa University (2022)",
+        "skills": [
+            "Cybersecurity",
+            "Penetration Testing",
+            "Network Security",
+            "Python",
+            "Kali Linux",
+            "Wireshark",
+            "SIEM"
+        ],
+        "experience": [
+            {
+                "title": "Security Analyst",
+                "company": "Ethio Telecom",
+                "years": 2
+            },
+            {
+                "title": "Security Intern",
+                "company": "Dashen Bank",
+                "years": 1
+            }
+        ],
+        "summary": "Cybersecurity analyst with CEH certification. Conducts penetration testing and vulnerability assessments for Ethiopia's largest telecom. Passionate about African cybersecurity.",
+        "fileName": "natnael_kebede_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-02T11:00:00Z"
+    },
+    {
+        "id": "resume-010",
+        "userId": "user-010",
+        "candidateName": "Tigist Alefe",
+        "email": "tigist.alefe@example.com",
+        "targetRole": "Frontend Developer",
+        "experienceYears": 2,
+        "education": "BSc Information Systems, Mekelle University (2023)",
+        "skills": [
+            "React",
+            "Next.js",
+            "TypeScript",
+            "Tailwind CSS",
+            "JavaScript",
+            "HTML",
+            "CSS",
+            "Git"
+        ],
+        "experience": [
+            {
+                "title": "Frontend Developer",
+                "company": "Eshi Express",
+                "years": 1
+            },
+            {
+                "title": "Web Developer Intern",
+                "company": "HahuCloud",
+                "years": 1
+            }
+        ],
+        "summary": "Frontend developer building performant Next.js applications. Specialized in Tailwind CSS and responsive design. Contributed to Eshi Express's customer-facing web portal.",
+        "fileName": "tigist_alefe_resume.pdf",
+        "fileUrl": "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        "uploadedAt": "2026-03-04T09:00:00Z"
+    }
+]

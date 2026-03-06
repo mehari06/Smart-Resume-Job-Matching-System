@@ -1,0 +1,474 @@
+{
+    "resume-001": {
+        "resumeId": "resume-001",
+        "candidateName": "Abebe Girma",
+        "targetRole": "Full Stack Developer",
+        "matches": [
+            {
+                "jobId": "job-001",
+                "jobTitle": "Full Stack Developer",
+                "company": "Safaricom Ethiopia",
+                "similarityScore": 91,
+                "rank": 1,
+                "matchedSkills": [
+                    "React",
+                    "Node.js",
+                    "TypeScript",
+                    "PostgreSQL",
+                    "REST APIs",
+                    "Git"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "GCP"
+                ],
+                "explanation": "Excellent match. All core required skills (React, Node.js, TypeScript, PostgreSQL) are present in resume."
+            },
+            {
+                "jobId": "job-008",
+                "jobTitle": "Frontend Developer (React/Next.js)",
+                "company": "Eshi Express",
+                "similarityScore": 84,
+                "rank": 2,
+                "matchedSkills": [
+                    "React",
+                    "TypeScript",
+                    "JavaScript"
+                ],
+                "missingSkills": [
+                    "Next.js",
+                    "Tailwind CSS"
+                ],
+                "explanation": "Strong frontend skills match. Next.js and Tailwind CSS would strengthen this application."
+            },
+            {
+                "jobId": "job-012",
+                "jobTitle": "Junior Software Developer",
+                "company": "HahuCloud",
+                "similarityScore": 76,
+                "rank": 3,
+                "matchedSkills": [
+                    "React",
+                    "Node.js",
+                    "JavaScript",
+                    "Git"
+                ],
+                "missingSkills": [],
+                "explanation": "Good foundational match. This role is a slight step back but offers stability."
+            },
+            {
+                "jobId": "job-003",
+                "jobTitle": "Backend Engineer (Python/Django)",
+                "company": "Afriwork",
+                "similarityScore": 62,
+                "rank": 4,
+                "matchedSkills": [
+                    "REST APIs",
+                    "PostgreSQL"
+                ],
+                "missingSkills": [
+                    "Python",
+                    "Django",
+                    "Redis",
+                    "Celery"
+                ],
+                "explanation": "Partial match on API and database skills but Python/Django experience is missing."
+            },
+            {
+                "jobId": "job-022",
+                "jobTitle": "Software Engineer – Fintech (Go/Golang)",
+                "company": "HelloCash",
+                "similarityScore": 54,
+                "rank": 5,
+                "matchedSkills": [
+                    "REST APIs",
+                    "PostgreSQL"
+                ],
+                "missingSkills": [
+                    "Go",
+                    "gRPC",
+                    "Microservices"
+                ],
+                "explanation": "Low match. Go experience is required which is not in the resume."
+            }
+        ],
+        "computedAt": "2026-03-05T12:00:00Z",
+        "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    },
+    "resume-002": {
+        "resumeId": "resume-002",
+        "candidateName": "Mekdes Tadesse",
+        "targetRole": "Data Scientist",
+        "matches": [
+            {
+                "jobId": "job-002",
+                "jobTitle": "Data Scientist",
+                "company": "Shega Media & Technology",
+                "similarityScore": 94,
+                "rank": 1,
+                "matchedSkills": [
+                    "Python",
+                    "NLP",
+                    "scikit-learn",
+                    "SQL",
+                    "pandas",
+                    "Tableau"
+                ],
+                "missingSkills": [
+                    "Data Visualization Power BI"
+                ],
+                "explanation": "Near-perfect match. All key data science skills are present."
+            },
+            {
+                "jobId": "job-006",
+                "jobTitle": "Machine Learning Engineer",
+                "company": "iCog Labs",
+                "similarityScore": 78,
+                "rank": 2,
+                "matchedSkills": [
+                    "Python",
+                    "NLP",
+                    "scikit-learn",
+                    "Hugging Face"
+                ],
+                "missingSkills": [
+                    "PyTorch",
+                    "FastAPI"
+                ],
+                "explanation": "Strong ML skills match. Deep learning framework experience would help."
+            },
+            {
+                "jobId": "job-015",
+                "jobTitle": "AI Product Researcher",
+                "company": "Amhara Bank",
+                "similarityScore": 71,
+                "rank": 3,
+                "matchedSkills": [
+                    "Python",
+                    "NLP",
+                    "API Integration"
+                ],
+                "missingSkills": [
+                    "LLMs",
+                    "Technical Writing"
+                ],
+                "explanation": "Good fit on AI/Python skills. Research writing experience is a plus."
+            },
+            {
+                "jobId": "job-020",
+                "jobTitle": "Business Intelligence Analyst",
+                "company": "Dashen Brewery",
+                "similarityScore": 65,
+                "rank": 4,
+                "matchedSkills": [
+                    "SQL",
+                    "Tableau",
+                    "Data Analysis"
+                ],
+                "missingSkills": [
+                    "Power BI",
+                    "Data Warehousing"
+                ],
+                "explanation": "Decent data skills overlap. BI tooling experience could be developed."
+            },
+            {
+                "jobId": "job-010",
+                "jobTitle": "Product Manager",
+                "company": "Kifiya",
+                "similarityScore": 52,
+                "rank": 5,
+                "matchedSkills": [
+                    "Data Analysis"
+                ],
+                "missingSkills": [
+                    "Product Management",
+                    "Agile",
+                    "Roadmapping"
+                ],
+                "explanation": "Low match. Data skills transfer but product management experience is needed."
+            }
+        ],
+        "computedAt": "2026-03-05T12:00:00Z",
+        "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    },
+    "resume-003": {
+        "resumeId": "resume-003",
+        "candidateName": "Yonas Bekele",
+        "targetRole": "DevOps Engineer",
+        "matches": [
+            {
+                "jobId": "job-005",
+                "jobTitle": "DevOps Engineer",
+                "company": "Commercial Bank of Ethiopia",
+                "similarityScore": 96,
+                "rank": 1,
+                "matchedSkills": [
+                    "Kubernetes",
+                    "Docker",
+                    "Terraform",
+                    "AWS",
+                    "CI/CD",
+                    "Linux",
+                    "GitHub Actions"
+                ],
+                "missingSkills": [],
+                "explanation": "Outstanding match. Every required skill is present in the resume."
+            },
+            {
+                "jobId": "job-011",
+                "jobTitle": "Cloud Solutions Architect",
+                "company": "Microsoft ADC",
+                "similarityScore": 72,
+                "rank": 2,
+                "matchedSkills": [
+                    "Terraform",
+                    "AWS",
+                    "Cloud Architecture"
+                ],
+                "missingSkills": [
+                    "Azure",
+                    "Enterprise Solutions"
+                ],
+                "explanation": "Good infrastructure background. Azure certification would make this stronger."
+            },
+            {
+                "jobId": "job-009",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "Ethio Telecom",
+                "similarityScore": 58,
+                "rank": 3,
+                "matchedSkills": [
+                    "Linux",
+                    "Network Security"
+                ],
+                "missingSkills": [
+                    "SIEM",
+                    "Penetration Testing",
+                    "CEH"
+                ],
+                "explanation": "Partial match on infrastructure knowledge. Security certifications are needed."
+            },
+            {
+                "jobId": "job-014",
+                "jobTitle": "Database Administrator",
+                "company": "Ethiopian Airlines",
+                "similarityScore": 51,
+                "rank": 4,
+                "matchedSkills": [
+                    "Linux",
+                    "PostgreSQL"
+                ],
+                "missingSkills": [
+                    "Database Administration",
+                    "Performance Tuning"
+                ],
+                "explanation": "Some overlap in Linux and PostgreSQL usage but DBA-specific skills are missing."
+            },
+            {
+                "jobId": "job-021",
+                "jobTitle": "Network Engineer",
+                "company": "Ethio Telecom",
+                "similarityScore": 48,
+                "rank": 5,
+                "matchedSkills": [
+                    "Linux",
+                    "Network Security"
+                ],
+                "missingSkills": [
+                    "Cisco",
+                    "CCNA",
+                    "BGP",
+                    "MPLS"
+                ],
+                "explanation": "Low match. Cisco and routing protocol certifications are not present."
+            }
+        ],
+        "computedAt": "2026-03-05T12:00:00Z",
+        "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    },
+    "resume-004": {
+        "resumeId": "resume-004",
+        "candidateName": "Sara Hailu",
+        "targetRole": "UI/UX Designer",
+        "matches": [
+            {
+                "jobId": "job-004",
+                "jobTitle": "UI/UX Designer",
+                "company": "Geez AI Labs",
+                "similarityScore": 93,
+                "rank": 1,
+                "matchedSkills": [
+                    "Figma",
+                    "UX Research",
+                    "Prototyping",
+                    "Design Systems",
+                    "Accessibility",
+                    "Wireframing"
+                ],
+                "missingSkills": [],
+                "explanation": "Excellent match. All required design skills are present including accessibility knowledge."
+            },
+            {
+                "jobId": "job-010",
+                "jobTitle": "Product Manager",
+                "company": "Kifiya",
+                "similarityScore": 61,
+                "rank": 2,
+                "matchedSkills": [
+                    "User Research",
+                    "Stakeholder Management"
+                ],
+                "missingSkills": [
+                    "Product Roadmap",
+                    "Agile",
+                    "Data Analysis"
+                ],
+                "explanation": "UX research skills transfer to PM role. Business and agile experience would help."
+            },
+            {
+                "jobId": "job-018",
+                "jobTitle": "Technical Content Writer",
+                "company": "Shega Media",
+                "similarityScore": 48,
+                "rank": 3,
+                "matchedSkills": [
+                    "Research"
+                ],
+                "missingSkills": [
+                    "Technical Writing",
+                    "SEO",
+                    "Journalism"
+                ],
+                "explanation": "Research background partially relevant. Writing portfolio would be needed."
+            },
+            {
+                "jobId": "job-008",
+                "jobTitle": "Frontend Developer",
+                "company": "Eshi Express",
+                "similarityScore": 42,
+                "rank": 4,
+                "matchedSkills": [
+                    "Design Systems"
+                ],
+                "missingSkills": [
+                    "React",
+                    "TypeScript",
+                    "Next.js"
+                ],
+                "explanation": "Design systems knowledge is relevant but frontend coding skills are missing."
+            },
+            {
+                "jobId": "job-017",
+                "jobTitle": "Scrum Master",
+                "company": "Global Bank Ethiopia",
+                "similarityScore": 38,
+                "rank": 5,
+                "matchedSkills": [
+                    "Facilitation"
+                ],
+                "missingSkills": [
+                    "Scrum",
+                    "Jira",
+                    "Agile Certification"
+                ],
+                "explanation": "Low match. Agile and Scrum certifications are required."
+            }
+        ],
+        "computedAt": "2026-03-05T12:00:00Z",
+        "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    },
+    "resume-005": {
+        "resumeId": "resume-005",
+        "candidateName": "Dawit Alemu",
+        "targetRole": "Machine Learning Engineer",
+        "matches": [
+            {
+                "jobId": "job-006",
+                "jobTitle": "Machine Learning Engineer",
+                "company": "iCog Labs",
+                "similarityScore": 97,
+                "rank": 1,
+                "matchedSkills": [
+                    "Python",
+                    "PyTorch",
+                    "NLP",
+                    "scikit-learn",
+                    "Hugging Face",
+                    "FastAPI"
+                ],
+                "missingSkills": [],
+                "explanation": "Perfect match. All required ML skills including NLP and Hugging Face are present."
+            },
+            {
+                "jobId": "job-002",
+                "jobTitle": "Data Scientist",
+                "company": "Shega Media",
+                "similarityScore": 82,
+                "rank": 2,
+                "matchedSkills": [
+                    "Python",
+                    "NLP",
+                    "scikit-learn",
+                    "pandas"
+                ],
+                "missingSkills": [
+                    "SQL",
+                    "Tableau"
+                ],
+                "explanation": "Strong overlap in data science skills. SQL and BI tools would complete the profile."
+            },
+            {
+                "jobId": "job-015",
+                "jobTitle": "AI Product Researcher",
+                "company": "Amhara Bank",
+                "similarityScore": 75,
+                "rank": 3,
+                "matchedSkills": [
+                    "Python",
+                    "NLP",
+                    "LLMs",
+                    "API Integration"
+                ],
+                "missingSkills": [
+                    "Technical Writing"
+                ],
+                "explanation": "Excellent AI/ML knowledge match. Need to develop technical writing skills."
+            },
+            {
+                "jobId": "job-003",
+                "jobTitle": "Backend Engineer (Python/Django)",
+                "company": "Afriwork",
+                "similarityScore": 63,
+                "rank": 4,
+                "matchedSkills": [
+                    "Python",
+                    "REST APIs"
+                ],
+                "missingSkills": [
+                    "Django",
+                    "Redis",
+                    "Celery"
+                ],
+                "explanation": "Python experience transfers but Django-specific backend skills are missing."
+            },
+            {
+                "jobId": "job-001",
+                "jobTitle": "Full Stack Developer",
+                "company": "Safaricom Ethiopia",
+                "similarityScore": 47,
+                "rank": 5,
+                "matchedSkills": [
+                    "REST APIs"
+                ],
+                "missingSkills": [
+                    "React",
+                    "Node.js",
+                    "TypeScript"
+                ],
+                "explanation": "Low match. Frontend and Node.js skills are not present in this ML-focused resume."
+            }
+        ],
+        "computedAt": "2026-03-05T12:00:00Z",
+        "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    }
+}
