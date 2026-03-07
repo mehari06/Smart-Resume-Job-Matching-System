@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get("page") ?? "1", 10);
         const pageSize = parseInt(searchParams.get("pageSize") ?? "9", 10);
 
-        const { jobs, total, totalPages } = getFilteredJobs(filters, page, pageSize);
-        const categories = getJobCategories();
+        const { jobs, total, totalPages } = await getFilteredJobs(filters, page, pageSize);
+        const categories = await getJobCategories();
 
         return NextResponse.json({
             data: jobs,

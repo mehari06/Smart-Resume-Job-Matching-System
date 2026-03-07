@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllResumes } from "../../../lib/data";
+import prisma from "../../../lib/prisma";
 
 /**
  * GET /api/resumes   — Returns resumes (filtered by userId in query)
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
         // const session = await getServerSession(authOptions);
         // if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const resumes = getAllResumes();
+        const resumes = await getAllResumes();
         const filtered = userId ? resumes.filter((r) => r.userId === userId) : resumes;
 
         return NextResponse.json({ data: filtered });
@@ -27,8 +28,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Add session check
         const body = (await request.json()) as Record<string, unknown>;
+        const userId = (body.userId as string | undefined) ?? "dev-user-001";
 
         if (!body.fileName || !body.fileUrl) {
             return NextResponse.json(
@@ -37,19 +38,27 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Stub: In production this writes to DB via Prisma
-        // const resume = await db.resume.create({ data: { ... } });
-        const newResume = {
-            id: `resume-${Date.now()}`,
-            userId: (body.userId as string) ?? "dev-user-001",
-            candidateName: (body.candidateName as string) ?? "New User",
-            fileName: body.fileName as string,
-            fileUrl: body.fileUrl as string,
-            filePublicId: body.filePublicId as string | undefined,
-            skills: (body.skills as string[]) ?? [],
-            targetRole: body.targetRole as string | undefined,
-            uploadedAt: new Date().toISOString(),
-        };
+        await prisma.user.upsert({
+            where: { id: userId },
+            update: {},
+            create: {
+                id: userId,
+                email: typeof body.email === "string" ? body.email : undefined,
+                name: typeof body.candidateName === "string" ? body.candidateName : "Dev User",
+            },
+        });
+
+        // Save to database via Prisma
+        const newResume = await prisma.resume.create({
+            data: {
+                userId,
+                fileName: body.fileName as string,
+                fileUrl: body.fileUrl as string,
+                filePublicId: body.filePublicId as string | undefined,
+                skills: (body.skills as string[]) ?? [],
+                targetRole: body.targetRole as string | undefined,
+            },
+        });
 
         return NextResponse.json(
             { data: newResume, message: "Resume uploaded successfully" },

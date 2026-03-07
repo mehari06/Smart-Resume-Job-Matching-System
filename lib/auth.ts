@@ -1,13 +1,11 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-// NOTE: PrismaAdapter is commented out until DATABASE_URL is configured.
-// Uncomment when Supabase is set up:
-// import { PrismaAdapter } from "@next-auth/prisma-adapter";
-// import { db } from "./db";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import prisma from "./prisma";
 
 export const authOptions: NextAuthOptions = {
-    // adapter: PrismaAdapter(db),
+    adapter: PrismaAdapter(prisma) as any,
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days

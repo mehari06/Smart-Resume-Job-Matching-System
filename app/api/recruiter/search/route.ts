@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const results = searchResumesByJobDescription(
+        const results = await searchResumesByJobDescription(
             body.jobDescription,
             body.minScore ?? 30
         );

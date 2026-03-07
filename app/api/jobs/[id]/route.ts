@@ -12,7 +12,7 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const job = getJobById(params.id);
+        const job = await getJobById(params.id);
         if (!job) {
             return NextResponse.json({ error: "Job not found" }, { status: 404 });
         }
@@ -29,7 +29,7 @@ export async function PUT(
 ) {
     try {
         // TODO: Check RECRUITER session
-        const job = getJobById(params.id);
+        const job = await getJobById(params.id);
         if (!job) {
             return NextResponse.json({ error: "Job not found" }, { status: 404 });
         }
@@ -48,7 +48,7 @@ export async function DELETE(
 ) {
     try {
         // TODO: Check RECRUITER session and ownership
-        const job = getJobById(params.id);
+        const job = await getJobById(params.id);
         if (!job) {
             return NextResponse.json({ error: "Job not found" }, { status: 404 });
         }
