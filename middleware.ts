@@ -6,8 +6,8 @@ export default withAuth(
         const token = req.nextauth.token;
         const pathname = req.nextUrl.pathname;
 
-        // Role-guard: /recruiter pages require RECRUITER or ADMIN role
-        if (pathname.startsWith("/recruiter")) {
+        // Role-guard: recruiter pages and job creation require RECRUITER or ADMIN role
+        if (pathname.startsWith("/recruiter") || pathname === "/jobs/new") {
             const role = token?.role as string;
             if (role !== "RECRUITER" && role !== "ADMIN") {
                 const url = req.nextUrl.clone();
@@ -25,7 +25,7 @@ export default withAuth(
             // Only protect specific routes — public routes (/, /jobs, /api/jobs) stay open
             authorized({ token, req }) {
                 const pathname = req.nextUrl.pathname;
-                const protectedPaths = ["/dashboard", "/recruiter", "/profile", "/matches"];
+                const protectedPaths = ["/dashboard", "/recruiter", "/profile", "/matches", "/jobs/new"];
                 const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
                 if (!isProtected) return true;
                 return !!token;
@@ -38,5 +38,5 @@ export default withAuth(
 );
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/recruiter/:path*", "/profile/:path*", "/matches/:path*"],
+    matcher: ["/dashboard/:path*", "/recruiter/:path*", "/profile/:path*", "/matches/:path*", "/jobs/new"],
 };

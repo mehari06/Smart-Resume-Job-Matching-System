@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireSessionUser } from "../../../../lib/api-auth";
 import { searchResumesByJobDescription } from "../../../../lib/data";
+
+export const dynamic = "force-dynamic";
 
 /**
  * POST /api/recruiter/search
@@ -11,11 +14,10 @@ import { searchResumesByJobDescription } from "../../../../lib/data";
  */
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Check RECRUITER role
-        // const session = await getServerSession(authOptions);
-        // if (!session || session.user.role !== 'RECRUITER') {
-        //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        // }
+        const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
+        if ("error" in auth) {
+            return auth.error;
+        }
 
         const body = (await request.json()) as {
             jobDescription?: string;
@@ -34,7 +36,6 @@ export async function POST(request: NextRequest) {
             body.minScore ?? 30
         );
 
-        // Strip sensitive fields from recruiter view
         const safeResults = results.map(({ resume, matchScore, matchedSkills }) => ({
             resumeId: resume.id,
             candidateName: resume.candidateName,
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             data: safeResults,
             total: safeResults.length,
-            algorithm: "Keyword overlap (dummy) — ML TF-IDF pending",
+            algorithm: "Keyword overlap (dummy) - ML TF-IDF pending",
         });
     } catch (error) {
         console.error("[POST /api/recruiter/search]", error);
