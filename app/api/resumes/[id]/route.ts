@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOwnerOrAdmin, requireSessionUser } from "../../../../lib/api-auth";
 import prisma from "../../../../lib/prisma";
 import { v2 as cloudinary } from "cloudinary";
+
+export const dynamic = "force-dynamic";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,28 +12,33 @@ cloudinary.config({
 });
 
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const { id } = params;
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
+        }
 
         const resume = await prisma.resume.findUnique({
-            where: { id },
+            where: { id: params.id },
         });
 
         if (!resume) {
             return NextResponse.json({ error: "Resume not found" }, { status: 404 });
         }
 
-        // Delete from Cloudinary if publicId exists
+        if (!isOwnerOrAdmin(auth.user, resume.userId)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         if (resume.filePublicId) {
             await cloudinary.uploader.destroy(resume.filePublicId);
         }
 
-        // Delete from database
         await prisma.resume.delete({
-            where: { id },
+            where: { id: params.id },
         });
 
         return NextResponse.json({ message: "Resume deleted successfully" });

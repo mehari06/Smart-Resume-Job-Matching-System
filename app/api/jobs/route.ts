@@ -1,18 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFilteredJobs, getJobCategories } from "../../../lib/data";
+import { requireSessionUser, syncSessionUser } from "../../../lib/api-auth";
+import { parseJobSource, parseJobType, serializeJob } from "../../../lib/job-utils";
+import prisma from "../../../lib/prisma";
 import type { JobFilters } from "../../../types";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/jobs
  * Query params: search, category, source, experience, type, page, pageSize
  *
  * POST /api/jobs
- * Body: { title, company, ... } — Recruiter creates a new job (stubbed, no DB yet)
+ * Body: { title, company, ... } - Recruiter creates a new job
  */
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
+        const mine = searchParams.get("mine") === "true";
+
+        if (mine) {
+            const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
+            if ("error" in auth) {
+                return auth.error;
+            }
+
+            await syncSessionUser(auth.user);
+
+            const ownJobs = await prisma.job.findMany({
+                where: {
+                    postedById: auth.user.id,
+                    isActive: true,
+                },
+                orderBy: { postedAt: "desc" },
+            });
+
+            return NextResponse.json({
+                data: ownJobs.map(serializeJob),
+                total: ownJobs.length,
+                page: 1,
+                pageSize: ownJobs.length,
+                totalPages: 1,
+                categories: await getJobCategories(),
+            });
+        }
 
         const filters: JobFilters = {
             search: searchParams.get("search") ?? undefined,
@@ -44,36 +76,49 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Add getServerSession(authOptions) check for RECRUITER role
+        const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
+        if ("error" in auth) {
+            return auth.error;
+        }
+
         const body = (await request.json()) as Record<string, unknown>;
 
-        // Validate required fields
-        if (!body.title || !body.company || !body.description) {
+        if (
+            typeof body.title !== "string" ||
+            typeof body.company !== "string" ||
+            typeof body.description !== "string"
+        ) {
             return NextResponse.json(
                 { error: "title, company, and description are required" },
                 { status: 400 }
             );
         }
 
-        // Stub: In production this would write to DB via Prisma
-        const newJob = {
-            id: `job-${Date.now()}`,
-            title: body.title as string,
-            company: body.company as string,
-            location: (body.location as string) ?? "Addis Ababa, Ethiopia",
-            type: (body.type as string) ?? "Full-time",
-            salary: body.salary as string | undefined,
-            description: body.description as string,
-            skills: (body.skills as string[]) ?? [],
-            source: "Internal",
-            category: (body.category as string) ?? "Engineering",
-            experience: (body.experience as string) ?? "Mid-level",
-            postedAt: new Date().toISOString(),
-            deadline: body.deadline as string | undefined,
-            applicants: 0,
-        };
+        await syncSessionUser(auth.user);
 
-        return NextResponse.json({ data: newJob, message: "Job created successfully" }, { status: 201 });
+        const createdJob = await prisma.job.create({
+            data: {
+                title: body.title.trim(),
+                company: body.company.trim(),
+                location: typeof body.location === "string" ? body.location.trim() : "Addis Ababa, Ethiopia",
+                type: parseJobType(body.type),
+                salary: typeof body.salary === "string" && body.salary.trim() ? body.salary.trim() : null,
+                description: body.description.trim(),
+                skills: Array.isArray(body.skills)
+                    ? body.skills.filter((skill): skill is string => typeof skill === "string" && !!skill.trim())
+                    : [],
+                source: parseJobSource(body.source),
+                category: typeof body.category === "string" && body.category.trim() ? body.category.trim() : "Engineering",
+                experience: typeof body.experience === "string" && body.experience.trim() ? body.experience.trim() : "Mid-level",
+                deadline: typeof body.deadline === "string" && body.deadline ? new Date(body.deadline) : null,
+                postedById: auth.user.id,
+            },
+        });
+
+        return NextResponse.json(
+            { data: serializeJob(createdJob), message: "Job created successfully" },
+            { status: 201 }
+        );
     } catch (error) {
         console.error("[POST /api/jobs]", error);
         return NextResponse.json({ error: "Failed to create job" }, { status: 500 });
