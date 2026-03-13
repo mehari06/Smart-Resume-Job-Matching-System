@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMatchesByResumeId } from "../../../lib/data";
+import { getMatchesByResumeId, getResumeById } from "../../../lib/data";
+import { isOwnerOrAdmin, requireSessionUser } from "../../../lib/api-auth";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/matches?resumeId=resume-001
@@ -10,6 +13,11 @@ import { getMatchesByResumeId } from "../../../lib/data";
  */
 export async function GET(request: NextRequest) {
     try {
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
+        }
+
         const { searchParams } = new URL(request.url);
         const resumeId = searchParams.get("resumeId");
 
@@ -20,14 +28,18 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // TODO: Add session check — user can only view their own matches
-        // const session = await getServerSession(authOptions);
-        // if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const resume = await getResumeById(resumeId);
+        if (!resume) {
+            return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+        }
+
+        if (!isOwnerOrAdmin(auth.user, resume.userId)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
 
         const result = await getMatchesByResumeId(resumeId);
 
         if (!result) {
-            // Return empty matches rather than 404 for unknown resumes
             return NextResponse.json({
                 data: {
                     resumeId,

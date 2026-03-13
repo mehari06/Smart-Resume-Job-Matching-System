@@ -1,23 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllResumes } from "../../../lib/data";
+import { requireSessionUser, syncSessionUser } from "../../../lib/api-auth";
 import prisma from "../../../lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 /**
- * GET /api/resumes   — Returns resumes (filtered by userId in query)
- * POST /api/resumes  — Creates a resume record (upload handled client-side via Cloudinary)
+ * GET /api/resumes   - Returns resumes for the authenticated user
+ * POST /api/resumes  - Creates a resume record (upload handled client-side via Cloudinary)
  */
 
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const userId = searchParams.get("userId");
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
+        }
 
-        // TODO: Replace with session check:
-        // const session = await getServerSession(authOptions);
-        // if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { searchParams } = new URL(request.url);
+        const requestedUserId = searchParams.get("userId");
 
         const resumes = await getAllResumes();
-        const filtered = userId ? resumes.filter((r) => r.userId === userId) : resumes;
+        const targetUserId =
+            auth.user.role === "ADMIN" && requestedUserId ? requestedUserId : auth.user.id;
+        const filtered =
+            auth.user.role === "ADMIN" && !requestedUserId
+                ? resumes
+                : resumes.filter((resume) => resume.userId === targetUserId);
 
         return NextResponse.json({ data: filtered });
     } catch (error) {
@@ -28,8 +37,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
+        }
+
         const body = (await request.json()) as Record<string, unknown>;
-        const userId = (body.userId as string | undefined) ?? "dev-user-001";
 
         if (!body.fileName || !body.fileUrl) {
             return NextResponse.json(
@@ -38,20 +51,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        await prisma.user.upsert({
-            where: { id: userId },
-            update: {},
-            create: {
-                id: userId,
-                email: typeof body.email === "string" ? body.email : undefined,
-                name: typeof body.candidateName === "string" ? body.candidateName : "Dev User",
-            },
-        });
+        await syncSessionUser(auth.user);
 
-        // Save to database via Prisma
         const newResume = await prisma.resume.create({
             data: {
-                userId,
+                userId: auth.user.id,
                 fileName: body.fileName as string,
                 fileUrl: body.fileUrl as string,
                 filePublicId: body.filePublicId as string | undefined,

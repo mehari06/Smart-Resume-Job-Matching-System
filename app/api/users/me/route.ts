@@ -1,27 +1,22 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth";
+import { requireSessionUser, syncSessionUser } from "../../../../lib/api-auth";
+import prisma from "../../../../lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/users/me
  * Returns the current authenticated user's profile.
- * Protected — returns 401 if not signed in.
+ * Protected - returns 401 if not signed in.
  */
 export async function GET() {
     try {
-        const session = await getServerSession(authOptions);
-
-        if (!session || !session.user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
         }
 
-        const user = {
-            id: (session.user as any).id ?? "dev-user",
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            role: (session.user as any).role ?? "SEEKER",
-        };
+        const user = await syncSessionUser(auth.user);
 
         return NextResponse.json({ data: user });
     } catch (error) {
@@ -32,21 +27,24 @@ export async function GET() {
 
 export async function PUT(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSessionUser();
+        if ("error" in auth) {
+            return auth.error;
         }
 
-        const body = (await request.json()) as { name?: string; role?: string };
+        const body = (await request.json()) as { name?: string };
+        const name = typeof body.name === "string" ? body.name.trim() : "";
 
-        // Stub: In production update DB record
-        const updated = {
-            id: (session.user as any).id,
-            name: body.name ?? session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            role: body.role ?? (session.user as any).role ?? "SEEKER",
-        };
+        if (!name) {
+            return NextResponse.json({ error: "Name is required" }, { status: 400 });
+        }
+
+        await syncSessionUser(auth.user);
+
+        const updated = await prisma.user.update({
+            where: { id: auth.user.id },
+            data: { name },
+        });
 
         return NextResponse.json({ data: updated, message: "Profile updated" });
     } catch (error) {

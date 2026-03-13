@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user, account }) {
+        async jwt({ token, user, account, trigger, session }) {
             // Persist role and provider into the JWT token
             if (user) {
                 token.role = (user as any).role ?? "SEEKER";
@@ -49,12 +49,23 @@ export const authOptions: NextAuthOptions = {
             if (account?.provider === "google") {
                 token.role = token.role ?? "SEEKER";
             }
+            if (trigger === "update" && session) {
+                if (typeof (session as any).name === "string") {
+                    token.name = (session as any).name;
+                }
+                if (typeof (session as any).role === "string") {
+                    token.role = (session as any).role;
+                }
+            }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 (session.user as any).id = token.id as string;
                 (session.user as any).role = token.role as string;
+                if (typeof token.name === "string") {
+                    session.user.name = token.name;
+                }
             }
             return session;
         },
