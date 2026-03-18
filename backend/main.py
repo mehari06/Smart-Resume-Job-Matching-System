@@ -12,13 +12,26 @@ app = FastAPI(title="Smart Resume Job Matcher API", version="0.1.0")
 class ResumeRequest(BaseModel):
     resume_text: str
 
-# Load job data and embeddings on startup
-jobs_df = pd.read_pickle(r"C:\Users\bezis\Downloads\Smart-Resume-Job-Matching-System\data\jobs.pkl")               # your job dataframe
-job_embeddings = torch.load(r"C:\Users\bezis\Downloads\Smart-Resume-Job-Matching-System\data\job_embeddings.pt")   # job embeddings
-model = SentenceTransformer("all-MiniLM-L6-v2")         # pretrained embedding model
+# Global variables (will be initialized on startup)
+jobs_df = None
+job_embeddings = None
+model = None
+
+@app.on_event("startup")
+def load_model_and_embeddings():
+    global jobs_df, job_embeddings, model
+    print("📦 Loading jobs and embeddings...")
+    jobs_df = pd.read_pickle(r"C:\Users\bezis\Downloads\Smart-Resume-Job-Matching-System\data\jobs.pkl")
+    job_embeddings = torch.load(r"C:\Users\bezis\Downloads\Smart-Resume-Job-Matching-System\data\job_embeddings.pt")
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    print("✅ Model and embeddings loaded!")
 
 @app.post("/match")
 def match_jobs(request: ResumeRequest):
+    global jobs_df, job_embeddings, model
+    if jobs_df is None or job_embeddings is None or model is None:
+        return {"error": "Model or embeddings not loaded yet."}
+
     resume_text = request.resume_text
     resume_embedding = model.encode(resume_text, convert_to_tensor=True)
 
@@ -37,8 +50,13 @@ def match_jobs(request: ResumeRequest):
         results.append({
             "job_title": job["Title"],
             "score": float(score),
-            "resume_idx": 0,          # optional, for logging
+            "resume_idx": 0,
             "job_idx": int(idx)
         })
 
     return results
+
+# Optional health check
+@app.get("/")
+def health_check():
+    return {"status": "API is running!"}
