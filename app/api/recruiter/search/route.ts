@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchResumesByJobDescription } from "../../../../lib/data";
+import { requireSessionUser } from "../../../../lib/api-auth";
+import { getAllResumes, searchResumesByJobDescription } from "../../../../lib/data";
+
+export const dynamic = "force-dynamic";
 
 /**
  * POST /api/recruiter/search
@@ -11,11 +14,10 @@ import { searchResumesByJobDescription } from "../../../../lib/data";
  */
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Check RECRUITER role
-        // const session = await getServerSession(authOptions);
-        // if (!session || session.user.role !== 'RECRUITER') {
-        //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        // }
+        const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
+        if ("error" in auth) {
+            return auth.error;
+        }
 
         const body = (await request.json()) as {
             jobDescription?: string;
@@ -29,12 +31,50 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const mlServiceUrl = process.env.ML_SERVICE_URL?.replace(/\/+$/, "");
+        if (mlServiceUrl) {
+            const resumes = await getAllResumes();
+            const mlRes = await fetch(`${mlServiceUrl}/recruiter-search`, {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    ...(process.env.ML_SERVICE_API_KEY
+                        ? { "x-api-key": process.env.ML_SERVICE_API_KEY }
+                        : {}),
+                },
+                body: JSON.stringify({
+                    jobDescription: body.jobDescription,
+                    resumes: resumes.map((r) => ({
+                        id: r.id,
+                        candidateName: r.candidateName,
+                        targetRole: r.targetRole,
+                        experienceYears: r.experienceYears,
+                        education: r.education,
+                        summary: r.summary ?? (r as any).parsedText,
+                        skills: r.skills,
+                        experience: r.experience,
+                    })),
+                    minScore: body.minScore ?? 30,
+                    topK: 20,
+                }),
+            });
+
+            if (mlRes.ok) {
+                const json = (await mlRes.json()) as unknown;
+                return NextResponse.json(json);
+            }
+
+            console.warn(
+                "[POST /api/recruiter/search] ML service returned non-200, falling back",
+                { status: mlRes.status }
+            );
+        }
+
         const results = await searchResumesByJobDescription(
             body.jobDescription,
             body.minScore ?? 30
         );
 
-        // Strip sensitive fields from recruiter view
         const safeResults = results.map(({ resume, matchScore, matchedSkills }) => ({
             resumeId: resume.id,
             candidateName: resume.candidateName,
@@ -49,7 +89,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             data: safeResults,
             total: safeResults.length,
-            algorithm: "Keyword overlap (dummy) — ML TF-IDF pending",
+            algorithm: "Keyword overlap (dummy) - ML TF-IDF pending",
         });
     } catch (error) {
         console.error("[POST /api/recruiter/search]", error);
