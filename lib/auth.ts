@@ -4,8 +4,21 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "./prisma";
 
+const usePrismaAdapter = process.env.NEXTAUTH_USE_PRISMA_ADAPTER === "true";
+const recruiterEmails = new Set(
+    (process.env.RECRUITER_EMAILS ?? "mbereket523@gmail.com")
+        .split(",")
+        .map((v) => v.trim().toLowerCase())
+        .filter(Boolean)
+);
+
+function inferRoleFromEmail(email?: string | null): "RECRUITER" | "SEEKER" {
+    const normalized = (email ?? "").trim().toLowerCase();
+    return recruiterEmails.has(normalized) ? "RECRUITER" : "SEEKER";
+}
+
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma) as any,
+    ...(usePrismaAdapter ? { adapter: PrismaAdapter(prisma) as any } : {}),
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -40,14 +53,28 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user, account }) {
+        async jwt({ token, user, account, trigger, session }) {
             // Persist role and provider into the JWT token
             if (user) {
-                token.role = (user as any).role ?? "SEEKER";
-                token.id = user.id;
+                const userRole = (user as any).role as string | undefined;
+                token.role = userRole ?? inferRoleFromEmail((user as any).email ?? token.email as string | undefined);
+                token.id = (user as any).id ?? token.sub ?? token.id;
+                token.image = (user as any).image ?? token.image;
             }
             if (account?.provider === "google") {
-                token.role = token.role ?? "SEEKER";
+                if (!token.role) {
+                    token.role = inferRoleFromEmail((token.email as string | undefined) ?? (user as any)?.email);
+                }
+                token.id = token.id ?? token.sub;
+                token.image = (token.picture as string | undefined) ?? (token.image as string | undefined);
+            }
+            if (trigger === "update" && session) {
+                if (typeof (session as any).name === "string") {
+                    token.name = (session as any).name;
+                }
+                if (typeof (session as any).role === "string") {
+                    token.role = (session as any).role;
+                }
             }
             return token;
         },
@@ -55,8 +82,42 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 (session.user as any).id = token.id as string;
                 (session.user as any).role = token.role as string;
+                if (typeof token.name === "string") {
+                    session.user.name = token.name;
+                }
+                const tokenImage = (token.image as string | undefined) ?? (token.picture as string | undefined);
+                if (typeof tokenImage === "string" && tokenImage.length > 0) {
+                    session.user.image = tokenImage;
+                }
             }
             return session;
+        },
+        async redirect({ url, baseUrl }) {
+            const toAbsolute = (path: string) => `${baseUrl}${path}`;
+            const forceDashboard = () => toAbsolute("/dashboard");
+
+            if (url.startsWith("/")) {
+                if (
+                    url === "/" ||
+                    url === "/login" ||
+                    url.startsWith("/api/auth")
+                ) {
+                    return forceDashboard();
+                }
+                return toAbsolute(url);
+            }
+            if (url.startsWith(baseUrl)) {
+                const pathname = url.slice(baseUrl.length) || "/";
+                if (
+                    url === baseUrl ||
+                    url === `${baseUrl}/login` ||
+                    url.startsWith(`${baseUrl}/api/auth`)
+                ) {
+                    return forceDashboard();
+                }
+                return url;
+            }
+            return forceDashboard();
         },
     },
 };

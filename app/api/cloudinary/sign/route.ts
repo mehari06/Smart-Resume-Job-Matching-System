@@ -7,9 +7,11 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+import { getTrustedUnixTimestampSeconds } from "../../../../lib/cloudinary-utils";
+
 export async function POST(request: NextRequest) {
     try {
-        const timestamp = Math.round(new Date().getTime() / 1000);
+        const timestamp = await getTrustedUnixTimestampSeconds();
         const paramsToSign = {
             timestamp: timestamp,
             folder: "resumes",

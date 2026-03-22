@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── NextAuth Models ──────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Core Application Models ──────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("SEEKER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts Account[]
+  sessions Session[]
+  resumes  Resume[]
+  jobs     Job[]     @relation("RecruiterJobs")
+
+  @@map("users")
+}
+
+model Resume {
+  id             String   @id @default(cuid())
+  userId         String
+  fileName       String
+  fileUrl        String
+  filePublicId   String?  // Cloudinary public ID for deletion
+  parsedText     String?  @db.Text
+  skills         String[] // Extracted skills array
+  experienceYears Int?
+  targetRole     String?
+  isActive       Boolean  @default(true)
+  uploadedAt     DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches Match[]
+
+  @@map("resumes")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  title       String
+  company     String
+  location    String
+  type        String    @default("FULL_TIME")
+  salary      String?
+  description String    @db.Text
+  skills      String[]
+  source      String    @default("INTERNAL")
+  category    String?
+  experience  String?
+  isActive    Boolean   @default(true)
+  postedAt    DateTime  @default(now())
+  deadline    DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  // Recruiter who posted
+  postedById String?
+  postedBy   User?   @relation("RecruiterJobs", fields: [postedById], references: [id])
+
+  // Relations
+  matches Match[]
+
+  @@map("jobs")
+}
+
+model Match {
+  id             String   @id @default(cuid())
+  resumeId       String
+  jobId          String
+  score          Float    // 0-100 cosine similarity score
+  rank           Int?     // 1-5 rank within this resume's matches
+  matchedSkills  String[] // Skills that matched
+  missingSkills  String[] // Skills in JD but not in resume
+  explanation    String?  @db.Text
+  computedAt     DateTime @default(now())
+
+  // Relations
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, jobId])
+  @@map("matches")
+}
