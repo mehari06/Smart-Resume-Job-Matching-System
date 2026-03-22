@@ -1,4 +1,4 @@
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "../types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
@@ -62,15 +62,41 @@ export function isOwnerOrAdmin(user: SessionUser, ownerId?: string | null) {
 }
 
 export async function syncSessionUser(user: SessionUser) {
-    return prisma.user.upsert({
+    const existingById = await prisma.user.findUnique({
         where: { id: user.id },
-        update: {
-            email: user.email ?? undefined,
-            image: user.image ?? undefined,
-            name: user.name ?? undefined,
-            role: user.role,
-        },
-        create: {
+    });
+
+    if (existingById) {
+        return prisma.user.update({
+            where: { id: user.id },
+            data: {
+                email: user.email ?? existingById.email ?? undefined,
+                image: user.image ?? existingById.image ?? undefined,
+                name: user.name ?? existingById.name ?? undefined,
+                role: user.role ?? existingById.role,
+            },
+        });
+    }
+
+    if (user.email) {
+        const existingByEmail = await prisma.user.findUnique({
+            where: { email: user.email },
+        });
+
+        if (existingByEmail) {
+            return prisma.user.update({
+                where: { id: existingByEmail.id },
+                data: {
+                    image: user.image ?? existingByEmail.image ?? undefined,
+                    name: user.name ?? existingByEmail.name ?? undefined,
+                    role: user.role ?? existingByEmail.role,
+                },
+            });
+        }
+    }
+
+    return prisma.user.create({
+        data: {
             id: user.id,
             email: user.email ?? undefined,
             image: user.image ?? undefined,

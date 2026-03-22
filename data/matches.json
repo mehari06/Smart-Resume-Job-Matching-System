@@ -470,5 +470,604 @@
         ],
         "computedAt": "2026-03-05T12:00:00Z",
         "algorithm": "TF-IDF + Cosine Similarity (dummy data)"
+    },
+    "resume-f8dbc480-8ecf-48f2-9460-33256e5724b9": {
+        "resumeId": "resume-f8dbc480-8ecf-48f2-9460-33256e5724b9",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-non-tech-116",
+                "jobTitle": "Sales Supervisor",
+                "company": "Orbit Health",
+                "similarityScore": 50.01,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-18T10:37:27.276Z"
+    },
+    "resume-0b47f9dc-5fc5-4686-bd9d-4b4e3f02cd1b": {
+        "resumeId": "resume-0b47f9dc-5fc5-4686-bd9d-4b4e3f02cd1b",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 47.36,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 47.17,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-079",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "IE Network Solutions",
+                "similarityScore": 44.93,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-010",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "AhadooTec",
+                "similarityScore": 43.12,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-083",
+                "jobTitle": "DevOps Engineer",
+                "company": "Apposit",
+                "similarityScore": 41.85,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-18T05:34:15.458Z"
+    },
+    "resume-decc2295-909e-4658-a129-a5d4679075c3": {
+        "resumeId": "resume-decc2295-909e-4658-a129-a5d4679075c3",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "Awtar",
+                "similarityScore": 47.36,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "Awtar",
+                "similarityScore": 47.17,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-025",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Kifiya Financial Technology",
+                "similarityScore": 44.93,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-010",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "BelCash",
+                "similarityScore": 43.12,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-014",
+                "jobTitle": "DevOps Engineer",
+                "company": "Telebirr",
+                "similarityScore": 41.85,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-18T08:48:11.020Z"
+    },
+    "resume-83c9f3c7-f755-45d9-9141-b66a0ab39377": {
+        "resumeId": "resume-83c9f3c7-f755-45d9-9141-b66a0ab39377",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-eth-031",
+                "jobTitle": "Next.js Developer",
+                "company": "Walia Technologies",
+                "similarityScore": 59.61,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-019",
+                "jobTitle": "Node.js Engineer",
+                "company": "Awash Bank",
+                "similarityScore": 58.19,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-074",
+                "jobTitle": "Vue.js Developer",
+                "company": "Kifiya Financial Technology",
+                "similarityScore": 55.84,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-096",
+                "jobTitle": "React Developer",
+                "company": "AhadooTec",
+                "similarityScore": 55.61,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-092",
+                "jobTitle": "Fullstack Javascript Developer",
+                "company": "Pioneer Technologies",
+                "similarityScore": 55.06,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-18T10:34:43.502Z"
+    },
+    "resume-83e1827c-d4a0-476f-9c3a-57c777ef98cd": {
+        "resumeId": "resume-83e1827c-d4a0-476f-9c3a-57c777ef98cd",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-non-tech-116",
+                "jobTitle": "Sales Supervisor",
+                "company": "Orbit Health",
+                "similarityScore": 50.01,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-097",
+                "jobTitle": "AI Product Researcher",
+                "company": "Awtar",
+                "similarityScore": 46.66,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-059",
+                "jobTitle": "Creative Director",
+                "company": "ArifPay",
+                "similarityScore": 45.63,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-089",
+                "jobTitle": "Product Designer",
+                "company": "Safaricom Ethiopia",
+                "similarityScore": 45.23,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-031",
+                "jobTitle": "Next.js Developer",
+                "company": "Walia Technologies",
+                "similarityScore": 44.8,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-19T00:27:19.776Z"
+    },
+    "resume-7abffd48-cb80-427d-a27c-fc27928c6517": {
+        "resumeId": "resume-7abffd48-cb80-427d-a27c-fc27928c6517",
+        "candidateName": "jhon",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 47.36,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 47.17,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-047",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Telebirr",
+                "similarityScore": 44.93,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-048",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "Telebirr",
+                "similarityScore": 43.12,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-062",
+                "jobTitle": "DevOps Engineer",
+                "company": "Minab IT Solutions",
+                "similarityScore": 41.85,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-19T00:39:46.463Z"
+    },
+    "resume-403c9da2-db71-4a2d-ad73-8434bcc752df": {
+        "resumeId": "resume-403c9da2-db71-4a2d-ad73-8434bcc752df",
+        "candidateName": "mbereket523",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 47.81,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 46.95,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-047",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Telebirr",
+                "similarityScore": 46.1,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-062",
+                "jobTitle": "DevOps Engineer",
+                "company": "Minab IT Solutions",
+                "similarityScore": 42.86,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 41.91,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-20T02:50:10.760Z"
+    },
+    "resume-ff1fe469-232d-4d40-8f2b-268cacb5d7d3": {
+        "resumeId": "resume-ff1fe469-232d-4d40-8f2b-268cacb5d7d3",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 48.38,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 45.67,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 43.99,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-047",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Telebirr",
+                "similarityScore": 43.87,
+                "rank": 4,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-048",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "Telebirr",
+                "similarityScore": 42.9,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-20T12:18:37.218Z"
+    },
+    "resume-bb2a8a00-272b-4415-a549-9ece4625945a": {
+        "resumeId": "resume-bb2a8a00-272b-4415-a549-9ece4625945a",
+        "candidateName": "Mehari Bereket",
+        "matches": [],
+        "computedAt": "2026-03-20T11:14:36.209Z"
+    },
+    "cmmyxdqvu0004iflp3tipz97q": {
+        "resumeId": "cmmyxdqvu0004iflp3tipz97q",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-non-tech-124",
+                "jobTitle": "Video Editor for TikTok Content (Expert)",
+                "company": "Afriwork",
+                "similarityScore": 27.02,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "CapCut",
+                    "Premiere Pro",
+                    "Short-form Storytelling",
+                    "Trends Analysis",
+                    "Color Grading"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-20T22:47:59.279Z"
+    },
+    "resume-7d3cf434-4239-4ac9-864f-a8234415870b": {
+        "resumeId": "resume-7d3cf434-4239-4ac9-864f-a8234415870b",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "WebSprix",
+                "similarityScore": 51.4,
+                "rank": 1,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "Redis",
+                    "Node.js",
+                    "Go",
+                    "MongoDB"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-047",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Telebirr",
+                "similarityScore": 43.6,
+                "rank": 2,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "GraphQL",
+                    "Node.js",
+                    "Redis",
+                    "Spring Boot"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-048",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "Telebirr",
+                "similarityScore": 42.13,
+                "rank": 3,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "Color Grading",
+                    "Adobe Premiere Pro",
+                    "DaVinci Resolve",
+                    "Final Cut Pro",
+                    "Audio Mixing",
+                    "After Effects",
+                    "Animation"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-20T23:48:10.527Z"
+    },
+    "resume-1dfaaf1a-ddff-4692-aa05-57bde48f3151": {
+        "resumeId": "resume-1dfaaf1a-ddff-4692-aa05-57bde48f3151",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-eth-006",
+                "jobTitle": "Network Engineer",
+                "company": "Abyssinia Bank",
+                "similarityScore": 59.4,
+                "rank": 1,
+                "matchedSkills": [
+                    "Cisco",
+                    "Network Security",
+                    "Troubleshooting"
+                ],
+                "missingSkills": [
+                    "Windows Server",
+                    "Active Directory",
+                    "Linux Administration",
+                    "Hardware Maintenance"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-005",
+                "jobTitle": "Network Engineer",
+                "company": "Awtar",
+                "similarityScore": 57.17,
+                "rank": 2,
+                "matchedSkills": [
+                    "Network Security",
+                    "Troubleshooting",
+                    "Cisco"
+                ],
+                "missingSkills": [
+                    "Linux Administration",
+                    "Active Directory",
+                    "Windows Server",
+                    "Hardware Maintenance"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-023",
+                "jobTitle": "Network Engineer",
+                "company": "Commercial Bank of Ethiopia",
+                "similarityScore": 55.2,
+                "rank": 3,
+                "matchedSkills": [
+                    "Network Security",
+                    "Cisco",
+                    "Troubleshooting"
+                ],
+                "missingSkills": [
+                    "Linux Administration",
+                    "Active Directory",
+                    "Windows Server"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-052",
+                "jobTitle": "Cybersecurity Analyst",
+                "company": "Eshi Express",
+                "similarityScore": 54.13,
+                "rank": 4,
+                "matchedSkills": [
+                    "Cisco",
+                    "Troubleshooting",
+                    "Network Security"
+                ],
+                "missingSkills": [
+                    "Hardware Maintenance",
+                    "Linux Administration",
+                    "Windows Server"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-049",
+                "jobTitle": "Cloud Infrastructure Engineer",
+                "company": "Telebirr",
+                "similarityScore": 43.6,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "Linux",
+                    "Terraform",
+                    "AWS",
+                    "Docker",
+                    "Ansible",
+                    "GCP",
+                    "Kubernetes"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-21T06:21:47.401Z"
     }
 }

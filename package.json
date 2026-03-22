@@ -2,12 +2,20 @@
     "name": "smartresume",
     "version": "0.1.0",
     "private": true,
-    "scripts": {
-        "dev": "next dev",
-        "build": "next build",
-        "start": "next start",
-        "lint": "next lint"
-    },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "npm run test:all",
+    "test:unit": "npm run test:jest && npm --prefix backend test",
+    "test:integration": "npm run test:jest && npm --prefix backend test",
+    "test:jest": "jest --config jest.config.cjs",
+    "test:jest:watch": "jest --config jest.config.cjs --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:unit && npm run test:e2e"
+  },
     "dependencies": {
         "@auth/prisma-adapter": "^2.4.2",
         "@hookform/resolvers": "^5.2.2",
@@ -21,9 +29,11 @@
         "cloudinary": "^2.4.0",
         "clsx": "2.1.1",
         "lucide-react": "^0.575.0",
+        "mammoth": "^1.9.1",
         "next": "14.2.5",
         "next-auth": "^4.24.7",
         "next-cloudinary": "^6.10.1",
+        "pdf-parse": "^1.1.1",
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "react-dropzone": "^15.0.0",
@@ -36,13 +46,18 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
+        "@playwright/test": "^1.55.0",
         "@types/node": "20.12.12",
+        "@types/jest": "^29.5.14",
         "@types/react": "18.3.3",
         "@types/react-dom": "18.3.0",
         "autoprefixer": "10.4.19",
+        "jest": "^29.7.0",
         "postcss": "8.4.38",
         "prisma": "^5.18.0",
+        "ts-jest": "^29.4.1",
         "tailwindcss": "3.4.10",
-        "typescript": "5.4.5"
+        "typescript": "5.4.5",
+        "vitest": "^2.1.9"
     }
 }

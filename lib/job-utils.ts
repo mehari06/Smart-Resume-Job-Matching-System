@@ -1,4 +1,7 @@
-import type { Job, JobSource as PrismaJobSource, JobType as PrismaJobType } from "@prisma/client";
+import type { Job } from "@prisma/client";
+
+export type PrismaJobType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "REMOTE" | "RESEARCH";
+export type PrismaJobSource = "AFRIWORK" | "ETHIOJOBS" | "SHEGA" | "HUGGINGFACE" | "INTERNAL";
 
 const jobTypeMap: Record<string, PrismaJobType> = {
     FULL_TIME: "FULL_TIME",
@@ -61,8 +64,8 @@ export function parseJobSource(value: unknown): PrismaJobSource {
 export function serializeJob(job: Job) {
     return {
         ...job,
-        type: uiJobTypeMap[job.type],
-        source: uiJobSourceMap[job.source],
+        type: uiJobTypeMap[job.type as PrismaJobType] || job.type,
+        source: uiJobSourceMap[job.source as PrismaJobSource] || job.source,
         salary: job.salary ?? undefined,
         category: job.category ?? "Engineering",
         experience: job.experience ?? "Mid-level",

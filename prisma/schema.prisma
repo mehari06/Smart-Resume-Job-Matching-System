@@ -11,30 +11,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── Enums ─────────────────────────────────────────────────────────────────────
-
-enum UserRole {
-  SEEKER
-  RECRUITER
-  ADMIN
-}
-
-enum JobType {
-  FULL_TIME
-  PART_TIME
-  CONTRACT
-  REMOTE
-  RESEARCH
-}
-
-enum JobSource {
-  AFRIWORK
-  ETHIOJOBS
-  SHEGA
-  HUGGINGFACE
-  INTERNAL
-}
-
 // ─── NextAuth Models ──────────────────────────────────────────────────────────
 
 model Account {
@@ -80,7 +56,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(SEEKER)
+  role          String    @default("SEEKER")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -119,11 +95,11 @@ model Job {
   title       String
   company     String
   location    String
-  type        JobType   @default(FULL_TIME)
+  type        String    @default("FULL_TIME")
   salary      String?
   description String    @db.Text
   skills      String[]
-  source      JobSource @default(INTERNAL)
+  source      String    @default("INTERNAL")
   category    String?
   experience  String?
   isActive    Boolean   @default(true)

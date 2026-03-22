@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSessionUser } from "../../../../lib/api-auth";
-import { searchResumesByJobDescription } from "../../../../lib/data";
+import { getAllResumes, searchResumesByJobDescription } from "../../../../lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,45 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: "Job description must be at least 20 characters" },
                 { status: 400 }
+            );
+        }
+
+        const mlServiceUrl = process.env.ML_SERVICE_URL?.replace(/\/+$/, "");
+        if (mlServiceUrl) {
+            const resumes = await getAllResumes();
+            const mlRes = await fetch(`${mlServiceUrl}/recruiter-search`, {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    ...(process.env.ML_SERVICE_API_KEY
+                        ? { "x-api-key": process.env.ML_SERVICE_API_KEY }
+                        : {}),
+                },
+                body: JSON.stringify({
+                    jobDescription: body.jobDescription,
+                    resumes: resumes.map((r) => ({
+                        id: r.id,
+                        candidateName: r.candidateName,
+                        targetRole: r.targetRole,
+                        experienceYears: r.experienceYears,
+                        education: r.education,
+                        summary: r.summary ?? (r as any).parsedText,
+                        skills: r.skills,
+                        experience: r.experience,
+                    })),
+                    minScore: body.minScore ?? 30,
+                    topK: 20,
+                }),
+            });
+
+            if (mlRes.ok) {
+                const json = (await mlRes.json()) as unknown;
+                return NextResponse.json(json);
+            }
+
+            console.warn(
+                "[POST /api/recruiter/search] ML service returned non-200, falling back",
+                { status: mlRes.status }
             );
         }
 

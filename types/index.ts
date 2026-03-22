@@ -39,6 +39,7 @@ export interface Resume {
   skills: string[];
   experience?: Array<{ title: string; company: string; years: number }>;
   summary?: string;
+  parsedText?: string;
   fileName: string;
   fileUrl: string;
   uploadedAt: string;
