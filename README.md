@@ -92,4 +92,4 @@ Production-ready deployment setup
 Access / Configuration
 
 Sensitive environment variables are not included.
-Request .env file via Telegram: @meha06
+Request local development .env file via Telegram: @meha06
