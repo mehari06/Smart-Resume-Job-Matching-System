@@ -52,7 +52,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_GA_ID=
 RESEND_API_KEY=
 
-🔒 Security
+ Security
 
 Never commit .env.local
 Store secrets securely & rotate when needed
