@@ -1,0 +1,23 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+}
+
+.main-gradient {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.14), transparent 35%),
+    linear-gradient(to bottom, #f8fafc, #f8fafc);
+}
+
+.grid-dots {
+  background-image: radial-gradient(rgba(100, 116, 139, 0.15) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
