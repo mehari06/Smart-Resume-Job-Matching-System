@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useJobs } from "../../hooks/useJobs";
 import { Search, Filter, MapPin, Briefcase, Clock, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
@@ -125,7 +125,14 @@ function JobCardSkeleton() {
 }
 
 export default function JobsPage() {
-    const router = useRouter();
+    return (
+        <Suspense fallback={<JobsPageFallback />}>
+            <JobsPageContent />
+        </Suspense>
+    );
+}
+
+function JobsPageContent() {
     const searchParams = useSearchParams();
 
     // Internal state for input before submitting query
@@ -276,6 +283,21 @@ export default function JobsPage() {
                         </Button>
                     </div>
                 )}
+            </main>
+        </div>
+    );
+}
+
+function JobsPageFallback() {
+    return (
+        <div className="main-gradient min-h-screen">
+            <Navbar />
+            <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <JobCardSkeleton key={i} />
+                    ))}
+                </div>
             </main>
         </div>
     );
