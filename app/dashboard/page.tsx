@@ -124,7 +124,7 @@ export default function DashboardPage() {
           <p className="mt-2 text-slate-600">Upload your resume and discover your top 5 matching jobs with explainable AI scores.</p>
         </div>
 
-        <div className="mb-8 grid gap-4 items-center sm:grid-cols-[1.2fr_1.3fr]">
+        <div className="mb-8 grid gap-4 items-center">
            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
             {[
               { label: "Resumes Uploaded", value: resumes.length, icon: FileText, color: "text-indigo-600" },
@@ -143,13 +143,6 @@ export default function DashboardPage() {
               </Card>
             ))}
           </div>
-          <Card className="hidden sm:flex flex-col justify-center border-indigo-100 bg-gradient-to-br from-indigo-50 to-white">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Dashboard Focus</p>
-            <h3 className="mt-2 text-xl font-semibold text-slate-900">No decorative images</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Resume upload and match analysis are now prioritized over visual filler.
-            </p>
-          </Card>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">

@@ -115,7 +115,7 @@ function MatchesPageContent() {
 
                 {/* Summary stats + chart */}
                 {!isLoading && matches.length > 0 && (
-                    <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_1.5fr_0.8fr]">
+                    <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_1.5fr]">
                         <div className="grid grid-cols-2 gap-4">
                             <Card className="text-center">
                                 <TrendingUp className="mx-auto h-5 w-5 text-indigo-600" />
@@ -153,10 +153,6 @@ function MatchesPageContent() {
                             </ResponsiveContainer>
                         </Card>
 
-                        <Card className="hidden lg:flex flex-col items-center justify-center text-center">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">AI Engine</p>
-                            <p className="mt-2 text-sm text-slate-600">Focused matching view with no decorative images.</p>
-                        </Card>
                     </section>
                 )}
 
