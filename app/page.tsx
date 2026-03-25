@@ -4,7 +4,6 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
-import { ImageSlider } from "../components/ImageSlider";
 
 const steps = [
   {
@@ -51,16 +50,15 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative flex items-center justify-center p-4">
-             <div className="main-gradient absolute inset-0 -z-10 opacity-30 blur-3xl"></div>
-             <ImageSlider 
-                images={[
-                    { src: "/images/dashboard-hero.png", alt: "Platform Hero", label: "Smart Career Analytics" },
-                    { src: "/images/career-path.png", alt: "Career Path", label: "Clear Growth Targets" }
-                ]}
-                className="w-full max-w-[800px] shadow-2xl"
-             />
-          </div>
+          <Card className="relative flex items-center justify-center border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-8 text-center">
+            <div>
+              <p className="text-sm font-semibold text-indigo-600">AI Matching Engine</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Clean, focused, and professional experience</h2>
+              <p className="mt-3 text-sm text-slate-600">
+                We removed decorative images and kept the interface simple so candidates and recruiters can focus on real results.
+              </p>
+            </div>
+          </Card>
         </section>
 
         <section id="how-it-works" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">

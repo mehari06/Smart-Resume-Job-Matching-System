@@ -8,7 +8,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { ArrowUpDown, CheckCircle2, Info, Search, TrendingUp, Target, AlertCircle } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
 import { Card } from "../../components/Card";
-import { ImageSlider } from "../../components/ImageSlider";
 import { Button } from "../../components/Button";
 import { CircularScore } from "../../components/CircularScore";
 import { ProgressBar } from "../../components/ProgressBar";
@@ -154,15 +153,9 @@ function MatchesPageContent() {
                             </ResponsiveContainer>
                         </Card>
 
-                        {/* Sliding Illustration */}
-                        <Card className="hidden lg:flex flex-col items-center justify-center p-0 overflow-visible bg-transparent border-none shadow-none">
-                            <ImageSlider 
-                                images={[
-                                    { src: "/images/career-path.png", alt: "Career Growth", label: "Your Path to Success" },
-                                    { src: "/images/ai-engine.png", alt: "AI Engine", label: "Powerful AI Alignment" }
-                                ]}
-                                className="w-full"
-                            />
+                        <Card className="hidden lg:flex flex-col items-center justify-center text-center">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">AI Engine</p>
+                            <p className="mt-2 text-sm text-slate-600">Focused matching view with no decorative images.</p>
                         </Card>
                     </section>
                 )}

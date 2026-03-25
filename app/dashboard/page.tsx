@@ -143,8 +143,12 @@ export default function DashboardPage() {
               </Card>
             ))}
           </div>
-          <Card className="hidden sm:flex items-center justify-center bg-transparent border-none p-0 shadow-none overflow-visible">
-             <img src="/images/dashboard-hero.png" alt="Smart Dashboard" className="max-h-[300px] w-full object-contain drop-shadow-2xl brightness-105" />
+          <Card className="hidden sm:flex flex-col justify-center border-indigo-100 bg-gradient-to-br from-indigo-50 to-white">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Dashboard Focus</p>
+            <h3 className="mt-2 text-xl font-semibold text-slate-900">No decorative images</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Resume upload and match analysis are now prioritized over visual filler.
+            </p>
           </Card>
         </div>
 
