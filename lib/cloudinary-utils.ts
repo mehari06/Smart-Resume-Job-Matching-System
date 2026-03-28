@@ -5,7 +5,7 @@
 export async function getTrustedUnixTimestampSeconds(): Promise<number> {
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);
+        const timeout = setTimeout(() => controller.abort(), 8000);
         
         // Use Cloudflare trace to get a highly reliable UTC timestamp
         const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace", {

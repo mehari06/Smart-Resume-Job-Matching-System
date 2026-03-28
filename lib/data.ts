@@ -10,14 +10,28 @@ import path from "node:path";
 import type { Job, Resume, MatchResult, JobFilters } from "../types";
 import prisma from "./prisma";
 
-function cache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => TResult) {
+/**
+ * Wraps a promise in a timeout. Rejects if it takes longer than `ms`.
+ * Used to ensure database issues don't block the entire application
+ * when a local JSON fallback is available.
+ */
+export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`Timeout [${label}]: DB unreachable after ${ms}ms`)), ms);
+    });
+    return Promise.race([promise, timeout]);
+}
+
+export const DB_TIMEOUT = 2500; // 2.5 seconds max for DB wait before JSON fallback
+
+function cache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => Promise<TResult>) {
     if (process.env.NODE_ENV !== "production") {
         return fn;
     }
-    const memo = new Map<string, TResult>();
-    return (...args: TArgs): TResult => {
+    const memo = new Map<string, Promise<TResult>>();
+    return (...args: TArgs): Promise<TResult> => {
         const key = args.length === 1 && typeof args[0] === "string" ? args[0] : JSON.stringify(args);
-        if (memo.has(key)) return memo.get(key) as TResult;
+        if (memo.has(key)) return memo.get(key) as Promise<TResult>;
         const result = fn(...args);
         memo.set(key, result);
         return result;
@@ -129,10 +143,14 @@ export const getAllJobs = cache(async (): Promise<Job[]> => {
     const jsonJobs = loadJson<Job[]>("jobs").map((j) => normalizeJob(j));
 
     try {
-        const jobs = await prisma.job.findMany({
-            where: { isActive: true },
-            orderBy: { postedAt: "desc" },
-        });
+        const jobs = await withTimeout(
+            prisma.job.findMany({
+                where: { isActive: true },
+                orderBy: { postedAt: "desc" },
+            }),
+            DB_TIMEOUT,
+            "getAllJobs"
+        );
 
         if (jobs.length > 0) {
             const prismaJobs = jobs.map((j: any) =>
@@ -222,18 +240,22 @@ export async function getJobCategories(): Promise<string[]> {
 export const getAllResumes = cache(async (): Promise<Resume[]> => {
     let allResumes: Resume[] = [];
     try {
-        const resumes = await prisma.resume.findMany({
-            where: { isActive: true },
-            orderBy: { uploadedAt: "desc" },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true,
+        const resumes = await withTimeout(
+            prisma.resume.findMany({
+                where: { isActive: true },
+                orderBy: { uploadedAt: "desc" },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        },
                     },
                 },
-            },
-        });
+            }),
+            DB_TIMEOUT,
+            "getAllResumes"
+        );
         allResumes = resumes.map(mapPrismaResume);
     } catch (e) {
         console.warn("Prisma failed in getAllResumes", e);
@@ -259,17 +281,21 @@ export const getAllResumes = cache(async (): Promise<Resume[]> => {
 
 export const getResumeById = cache(async (id: string): Promise<Resume | undefined> => {
     try {
-        const resume = await prisma.resume.findUnique({
-            where: { id },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true,
+        const resume = await withTimeout(
+            prisma.resume.findUnique({
+                where: { id },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        },
                     },
                 },
-            },
-        });
+            }),
+            DB_TIMEOUT,
+            "getResumeById"
+        );
         if (resume) {
             return mapPrismaResume(resume);
         }
@@ -283,18 +309,22 @@ export const getResumeById = cache(async (id: string): Promise<Resume | undefine
 export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]> => {
     let allResumes: Resume[] = [];
     try {
-        const resumes = await prisma.resume.findMany({
-            where: { userId, isActive: true },
-            orderBy: { uploadedAt: "desc" },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true,
+        const resumes = await withTimeout(
+            prisma.resume.findMany({
+                where: { userId, isActive: true },
+                orderBy: { uploadedAt: "desc" },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        },
                     },
                 },
-            },
-        });
+            }),
+            DB_TIMEOUT,
+            "getResumesByUserId"
+        );
         allResumes = resumes.map(mapPrismaResume);
     } catch (e) {
         console.warn("Prisma failed in getResumesByUserId", e);
@@ -319,12 +349,16 @@ export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]
 
 export const getMatchesByResumeId = cache(async (resumeId: string): Promise<MatchResult | undefined> => {
     try {
-        const matches = await prisma.match.findMany({
-            where: { resumeId },
-            include: { job: true },
-            orderBy: { rank: "asc" },
-            take: 5,
-        });
+        const matches = await withTimeout(
+            prisma.match.findMany({
+                where: { resumeId },
+                include: { job: true },
+                orderBy: { rank: "asc" },
+                take: 5,
+            }),
+            DB_TIMEOUT,
+            "getMatchesByResumeId"
+        );
         if (matches.length > 0) {
             return {
                 resumeId,

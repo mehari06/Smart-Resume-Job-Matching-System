@@ -53,6 +53,15 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
+        async signIn({ user, account, profile }) {
+            console.log("NextAuth SignIn Attempt:", {
+                email: user?.email,
+                provider: account?.provider,
+                hasId: !!process.env.GOOGLE_CLIENT_ID,
+                hasSecret: !!process.env.GOOGLE_CLIENT_SECRET
+            });
+            return true;
+        },
         async jwt({ token, user, account, trigger, session }) {
             // Persist role and provider into the JWT token
             if (user) {
