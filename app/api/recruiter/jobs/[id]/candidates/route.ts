@@ -4,6 +4,7 @@ import path from "node:path";
 import { requireSessionUser } from "../../../../../../lib/api-auth";
 import prisma from "../../../../../../lib/prisma";
 import { getAccountProfile } from "../../../../../../lib/user-profile-store";
+import { withTimeout, DB_TIMEOUT } from "../../../../../../lib/data";
 
 export const dynamic = "force-dynamic";
 const DEFAULT_RECRUITER_EMAIL = "mbereket523@gmail.com";
@@ -25,19 +26,27 @@ export async function GET(
         let usedPrisma = true;
 
         try {
-            job = await prisma.job.findUnique({
-                where: { id: params.id },
-                select: { id: true, postedById: true, title: true, company: true },
-            });
+            job = await withTimeout(
+                prisma.job.findUnique({
+                    where: { id: params.id },
+                    select: { id: true, postedById: true, title: true, company: true },
+                }),
+                DB_TIMEOUT,
+                "getJobForCandidates"
+            );
             if (!job) {
                 return NextResponse.json({ error: "Job not found" }, { status: 404 });
             }
 
             const normalizedEmail = (auth.user.email ?? "").trim().toLowerCase();
-            const defaultOwner = await prisma.user.findUnique({
-                where: { email: DEFAULT_RECRUITER_EMAIL },
-                select: { id: true },
-            });
+            const defaultOwner = await withTimeout(
+                prisma.user.findUnique({
+                    where: { email: DEFAULT_RECRUITER_EMAIL },
+                    select: { id: true },
+                }),
+                DB_TIMEOUT,
+                "getDefaultOwnerForCandidates"
+            );
             const isDefaultRecruiter =
                 normalizedEmail === DEFAULT_RECRUITER_EMAIL ||
                 (defaultOwner?.id !== undefined && auth.user.id === defaultOwner.id);
@@ -48,24 +57,28 @@ export async function GET(
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
             }
 
-            rows = await prisma.match.findMany({
-                where: { jobId: params.id },
-                orderBy: [{ score: "desc" }, { computedAt: "desc" }],
-                include: {
-                    resume: {
-                        include: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true,
-                                    image: true,
+            rows = await withTimeout(
+                prisma.match.findMany({
+                    where: { jobId: params.id },
+                    orderBy: [{ score: "desc" }, { computedAt: "desc" }],
+                    include: {
+                        resume: {
+                            include: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        email: true,
+                                        image: true,
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            });
+                }),
+                DB_TIMEOUT,
+                "getMatchesForCandidates"
+            );
         } catch (e) {
             usedPrisma = false;
             console.warn("[GET /api/recruiter/jobs/[id]/candidates] Prisma failed; using JSON fallback", e);
@@ -95,7 +108,19 @@ export async function GET(
                 const matchEntry = (result?.matches ?? []).find((m: any) => m?.jobId === params.id);
                 if (!matchEntry) continue;
                 const resume = resumes.find((r) => r.id === resumeId);
-                if (!resume) continue;
+                // Allow fallback if resume is missing from resumes.json but present in matches.json
+                const mappedResume = resume || {
+                    id: resumeId,
+                    userId: result.userId || resumeId,
+                    fileName: `${result.candidateName || "Candidate"}_resume.pdf`,
+                    fileUrl: "#",
+                    uploadedAt: result.computedAt,
+                    targetRole: result.targetRole || "Unknown Role",
+                    experienceYears: 0,
+                    skills: [],
+                    candidateName: result.candidateName || "Candidate",
+                    email: null,
+                };
                 collected.push({
                     id: `${resumeId}-${params.id}`,
                     score: Number(matchEntry.similarityScore ?? 0),
@@ -105,18 +130,18 @@ export async function GET(
                     explanation: matchEntry.explanation ?? "",
                     computedAt: new Date(result?.computedAt ?? Date.now()),
                     resume: {
-                        id: resume.id,
-                        userId: resume.userId,
-                        fileName: resume.fileName,
-                        fileUrl: resume.fileUrl,
-                        uploadedAt: new Date(resume.uploadedAt ?? Date.now()),
-                        targetRole: resume.targetRole,
-                        experienceYears: resume.experienceYears,
-                        skills: resume.skills ?? [],
+                        id: mappedResume.id,
+                        userId: mappedResume.userId,
+                        fileName: mappedResume.fileName,
+                        fileUrl: mappedResume.fileUrl,
+                        uploadedAt: new Date(mappedResume.uploadedAt ?? Date.now()),
+                        targetRole: mappedResume.targetRole,
+                        experienceYears: mappedResume.experienceYears,
+                        skills: mappedResume.skills ?? [],
                         user: {
-                            id: resume.userId ?? resume.id,
-                            name: resume.candidateName ?? "Candidate",
-                            email: resume.email ?? null,
+                            id: mappedResume.userId ?? mappedResume.id,
+                            name: mappedResume.candidateName ?? "Candidate",
+                            email: mappedResume.email ?? null,
                             image: null,
                         },
                     },

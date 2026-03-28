@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users, Briefcase, FileText, BarChart, Plus, SlidersHorizontal, Sparkles, AlertCircle, Pencil, Trash2, RefreshCw, Save, X, Eye, Download } from "lucide-react";
+import { Search, Users, Briefcase, FileText, BarChart, Plus, SlidersHorizontal, Sparkles, AlertCircle, Pencil, Trash2, RefreshCw, Save, X, Eye, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
@@ -25,6 +25,7 @@ type EditableJob = {
 };
 
 const JOB_TYPE_OPTIONS: Job["type"][] = ["Full-time", "Part-time", "Contract", "Remote", "Research Contract"];
+const JOBS_PER_PAGE = 5;
 
 type JobCandidate = {
   matchId: string;
@@ -68,11 +69,18 @@ export default function RecruiterPage() {
   const [selectedJobForCandidates, setSelectedJobForCandidates] = useState<string | null>(null);
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
   const [candidates, setCandidates] = useState<JobCandidate[]>([]);
+  const [jobsPage, setJobsPage] = useState(1);
 
   const totalApplicants = useMemo(
     () => jobs.reduce((sum, job) => sum + (job.applicants ?? 0), 0),
     [jobs]
   );
+
+  const totalJobsPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
+  const paginatedJobs = useMemo(() => {
+    const start = (jobsPage - 1) * JOBS_PER_PAGE;
+    return jobs.slice(start, start + JOBS_PER_PAGE);
+  }, [jobs, jobsPage]);
 
   const avgMatch = useMemo(() => {
     if (results.length === 0) return 0;
@@ -89,6 +97,7 @@ export default function RecruiterPage() {
         throw new Error(json.error ?? "Failed to load your jobs");
       }
       setJobs(Array.isArray(json.data) ? json.data : []);
+      setJobsPage(1); // Reset to first page on refresh
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load jobs");
       setJobs([]);
@@ -205,7 +214,15 @@ export default function RecruiterPage() {
         throw new Error(json.error ?? "Failed to delete job");
       }
 
-      setJobs((prev) => prev.filter((job) => job.id !== jobId));
+      setJobs((prev) => {
+        const nextJobs = prev.filter((job) => job.id !== jobId);
+        // Adjust page if current page becomes empty
+        const nextTotalPages = Math.ceil(nextJobs.length / JOBS_PER_PAGE);
+        if (jobsPage > nextTotalPages && nextTotalPages > 0) {
+          setJobsPage(nextTotalPages);
+        }
+        return nextJobs;
+      });
       toast.success("Job deleted");
       if (editingJobId === jobId) {
         cancelEditing();
@@ -259,14 +276,19 @@ export default function RecruiterPage() {
               <p className="text-xs text-slate-500">Active Jobs</p>
             </div>
           </Card>
-          <Card className="flex items-center gap-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{totalApplicants}</p>
-              <p className="text-xs text-slate-500">Total Applicants</p>
-            </div>
+          <Card className="flex items-center gap-4 transition-all hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 group" asChild>
+            <Link href="/recruiter/applicants">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{totalApplicants}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-slate-500">Total Applicants</p>
+                  <Eye className="h-3 w-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+            </Link>
           </Card>
           <Card className="flex items-center gap-4">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
@@ -400,7 +422,7 @@ export default function RecruiterPage() {
                   </div>
                 )}
 
-                {!isLoadingJobs && jobs.map((job) => {
+                {!isLoadingJobs && paginatedJobs.map((job) => {
                   const isEditing = editingJobId === job.id && editDraft;
                   const isBusy = busyJobId === job.id;
 
@@ -524,6 +546,35 @@ export default function RecruiterPage() {
                     </div>
                   );
                 })}
+
+                {/* Pagination Controls */}
+                {!isLoadingJobs && jobs.length > JOBS_PER_PAGE && (
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setJobsPage((p) => Math.max(1, p - 1))}
+                      disabled={jobsPage === 1}
+                      className="text-xs py-1 h-8"
+                    >
+                      <ChevronLeft className="mr-1 h-3.5 w-3.5" />
+                      Prev
+                    </Button>
+                    <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                      Page {jobsPage} of {totalJobsPages}
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setJobsPage((p) => Math.min(totalJobsPages, p + 1))}
+                      disabled={jobsPage === totalJobsPages}
+                      className="text-xs py-1 h-8"
+                    >
+                      Next
+                      <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
               <Button variant="ghost" className="w-full mt-4 text-xs" asChild>
                 <Link href="/jobs/new">Post Another Job</Link>

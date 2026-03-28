@@ -3,6 +3,7 @@ import { getAllJobs, getFilteredJobs, getJobCategories } from "../../../lib/data
 import { requireSessionUser, syncSessionUser } from "../../../lib/api-auth";
 import { parseJobSource, parseJobType, serializeJob } from "../../../lib/job-utils";
 import prisma from "../../../lib/prisma";
+import { withTimeout, DB_TIMEOUT } from "../../../lib/data";
 import type { JobFilters } from "../../../types";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,18 @@ const DEFAULT_RECRUITER_CATEGORIES = new Set([
 ]);
 
 function shouldBelongToDefaultRecruiter(job: { category?: string; title?: string }) {
-    if (job.category && DEFAULT_RECRUITER_CATEGORIES.has(job.category)) return true;
-    const title = (job.title ?? "").toLowerCase();
-    return title.includes("project manager") || title.includes("project management");
+    // For local development mode, assign all jobs from JSON to the default recruiter mbereket523@gmail.com
+    return true;
 }
 
 async function ensureDefaultRecruiterUser() {
-    const existing = await prisma.user.findUnique({
-        where: { email: DEFAULT_RECRUITER_EMAIL },
-    });
+    const existing = await withTimeout(
+        prisma.user.findUnique({
+            where: { email: DEFAULT_RECRUITER_EMAIL },
+        }),
+        DB_TIMEOUT,
+        "ensureDefaultRecruiterUser.find"
+    );
     if (existing) return existing;
 
     try {
@@ -46,9 +50,26 @@ async function ensureDefaultRecruiterUser() {
 }
 
 async function assignAllJsonJobsToDefaultRecruiter(ownerId: string) {
+    // 1. Check if we have already assigned jobs to avoid doing 210 sequential upserts on every request
+    const existingCount = await withTimeout(
+        prisma.job.count({
+            where: { postedById: ownerId }
+        }),
+        DB_TIMEOUT,
+        "assignAllJsonJobsToDefaultRecruiter.count"
+    );
+
+    // If we already have a significant number of jobs, assume sync is done.
+    // We can always force a re-sync by deleting jobs if needed.
+    if (existingCount >= 10) return;
+
     const allJobs = await getAllJobs();
     if (!Array.isArray(allJobs) || allJobs.length === 0) return;
 
+    console.log(`[Sync] Assigning ${allJobs.length} jobs to default recruiter...`);
+
+    // Use a transaction or chunking if possible, but for simplicity let's just 
+    // only do it once.
     for (const job of allJobs) {
         if (!shouldBelongToDefaultRecruiter(job)) continue;
         const postedAt = job.postedAt ? new Date(job.postedAt) : new Date();
@@ -119,50 +140,53 @@ export async function GET(request: NextRequest) {
             }
 
             const isDefaultRecruiter = normalizedEmail === DEFAULT_RECRUITER_EMAIL || (defaultOwnerId !== null && auth.user.id === defaultOwnerId);
-            const ownJobs = await prisma.job.findMany({
-                where: isDefaultRecruiter
-                    ? {
-                          postedById: ownerIdForMine,
-                          isActive: true,
-                          OR: [
-                              { category: { in: Array.from(DEFAULT_RECRUITER_CATEGORIES) } },
-                              { title: { contains: "project manager", mode: "insensitive" } },
-                              { title: { contains: "project management", mode: "insensitive" } },
-                          ],
-                      }
-                    : {
-                          postedById: ownerIdForMine,
-                          isActive: true,
-                      },
-                orderBy: { postedAt: "desc" },
-            });
+            
+            let ownJobs: any[] = [];
+            let fallbackNeeded = false;
 
-            if (ownJobs.length === 0 && defaultOwnerId) {
-                const defaultOwnerJobs = await prisma.job.findMany({
-                    where: {
-                        postedById: defaultOwnerId,
-                        isActive: true,
-                        OR: [
-                            { category: { in: Array.from(DEFAULT_RECRUITER_CATEGORIES) } },
-                            { title: { contains: "project manager", mode: "insensitive" } },
-                            { title: { contains: "project management", mode: "insensitive" } },
-                        ],
-                    },
-                    orderBy: { postedAt: "desc" },
-                });
-                if (defaultOwnerJobs.length > 0) {
-                    return NextResponse.json({
-                        data: defaultOwnerJobs.map(serializeJob),
-                        total: defaultOwnerJobs.length,
-                        page: 1,
-                        pageSize: defaultOwnerJobs.length,
-                        totalPages: 1,
-                        categories: await getJobCategories(),
+            try {
+                ownJobs = await withTimeout(
+                    prisma.job.findMany({
+                        where: isDefaultRecruiter
+                            ? {
+                                  postedById: ownerIdForMine,
+                                  isActive: true,
+                              }
+                            : {
+                                  postedById: ownerIdForMine,
+                                  isActive: true,
+                              },
+                        orderBy: { postedAt: "desc" },
+                    }),
+                    DB_TIMEOUT,
+                    "getOwnJobs"
+                );
+
+                if (ownJobs.length === 0 && defaultOwnerId) {
+                    const defaultOwnerJobs = await prisma.job.findMany({
+                        where: {
+                            postedById: defaultOwnerId,
+                            isActive: true,
+                        },
+                        orderBy: { postedAt: "desc" },
                     });
+                    if (defaultOwnerJobs.length > 0) {
+                        return NextResponse.json({
+                            data: defaultOwnerJobs.map(serializeJob),
+                            total: defaultOwnerJobs.length,
+                            page: 1,
+                            pageSize: defaultOwnerJobs.length,
+                            totalPages: 1,
+                            categories: await getJobCategories(),
+                        });
+                    }
                 }
+            } catch (e) {
+                console.warn("[GET /api/jobs?mine=true] Prisma findMany failed, falling back to JSON");
+                fallbackNeeded = true;
             }
 
-            if (ownJobs.length === 0 && isDefaultRecruiter) {
+            if (fallbackNeeded || (ownJobs.length === 0 && isDefaultRecruiter)) {
                 const allJobs = (await getAllJobs()).filter((job) => shouldBelongToDefaultRecruiter(job));
                 return NextResponse.json({
                     data: allJobs,

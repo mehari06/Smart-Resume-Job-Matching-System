@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { getAllJobs, getJobById, getResumeById } from "../../../../../lib/data";
 import { isOwnerOrAdmin, requireSessionUser } from "../../../../../lib/api-auth";
 import prisma from "../../../../../lib/prisma";
@@ -233,8 +235,39 @@ export async function POST(
                     ]);
                 }
             } catch (e) {
-                console.warn("[POST /api/jobs/[id]/apply] Match persistence failed", e);
+                console.warn("[POST /api/jobs/[id]/apply] Match persistence to DB failed", e);
             }
+
+            // --- SYSTEMIC FIX: Sync to JSON for Recruiter Fallback ---
+            try {
+                const matchesPath = path.join(process.cwd(), "data", "matches.json");
+                const matchesRaw = await fs.readFile(matchesPath, "utf8").catch(() => "{}");
+                const matchesMap = JSON.parse(matchesRaw);
+
+                matchesMap[body.resumeId] = {
+                    resumeId: body.resumeId,
+                    candidateName: resume.candidateName || "Candidate",
+                    targetRole: resume.targetRole || "Unknown Role",
+                    matches: persistable.map(m => ({
+                        jobId: m.jobId,
+                        jobTitle: m.jobTitle,
+                        company: m.company,
+                        similarityScore: m.similarityScore,
+                        rank: m.rank,
+                        matchedSkills: m.matchedSkills,
+                        missingSkills: m.missingSkills,
+                        explanation: m.explanation
+                    })),
+                    computedAt: computedAt.toISOString(),
+                    algorithm: "Local Sync (Systemic Fix)"
+                };
+
+                await fs.writeFile(matchesPath, JSON.stringify(matchesMap, null, 4), "utf8");
+                console.log(`[POST /api/jobs/[id]/apply] Synced match for resume ${body.resumeId} to matches.json`);
+            } catch (jsonErr) {
+                console.error("[POST /api/jobs/[id]/apply] Match persistence to JSON failed", jsonErr);
+            }
+            // ---------------------------------------------------------
         }
 
         return NextResponse.json({
