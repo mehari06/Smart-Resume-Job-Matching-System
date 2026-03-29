@@ -1,95 +1,81 @@
 # Smart Resume Job Matching System
 
-Production-ready full-stack application for AI-powered resume–job matching.
+Production-ready full-stack application for AI-powered resume-to-job matching.
 
-## Architecture
-- **Frontend + API:** Next.js (`app/`, `app/api/`)  
-- **Database:** PostgreSQL (Supabase) + Prisma  
-- **Storage:** Cloudinary  
-- **ML Service:** External FastAPI (`/match` endpoint)  
+## Stack
+- Frontend/API: Next.js 14 (`app/`, `app/api/`)
+- Auth: NextAuth
+- Database: PostgreSQL (Supabase) + Prisma
+- Storage: Cloudinary
+- ML Service: FastAPI (`backend/main.py`, `/match`)
 
 ## Prerequisites
-- Node.js 20+, npm 10+  
-- PostgreSQL/Supabase  
-- Google OAuth credentials  
-- Cloudinary credentials  
-- Python 3.10+ (for local ML service)  
+- Node.js 20+
+- npm 10+
+- Python 3.10+
 
 ## Setup
-
-### 1. Clone & Install
+1. Clone and install
 ```bash
 git clone https://github.com/mehari06/Smart-Resume-Job-Matching-System.git
 cd Smart-Resume-Job-Matching-System
 npm install
-2. Environment Variables
+```
 
-Create .env.local:
+2. Create env file from template
+```bash
+cp .env.example .env
+```
 
-# Auth
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=YOUR_SECRET
-GOOGLE_CLIENT_ID=YOUR_ID
-GOOGLE_CLIENT_SECRET=YOUR_SECRET
-RECRUITER_EMAILS=your@email.com
-NEXTAUTH_USE_PRISMA_ADAPTER=true
+3. Fill required values in `.env`
+- Database + auth + cloudinary credentials
+- ML settings:
+  - `ML_SERVICE_URL=http://127.0.0.1:8000`
+  - `ML_SERVICE_API_KEY=<same value as FASTAPI_API_KEY>`
+  - `FASTAPI_API_KEY=<same value as ML_SERVICE_API_KEY>`
 
-# Database
-DATABASE_URL=YOUR_DB_URL
-DIRECT_URL=YOUR_DIRECT_URL
+4. Start ML service (PowerShell example)
+```powershell
+cd backend
+$env:FASTAPI_API_KEY="<same shared key>"
+$env:DATA_DIR="data"
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
 
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=YOUR_NAME
-CLOUDINARY_API_KEY=YOUR_KEY
-CLOUDINARY_API_SECRET=YOUR_SECRET
-
-# ML Service
-ML_SERVICE_URL=http://127.0.0.1:8000
-ML_SERVICE_API_KEY=OPTIONAL
-
-# Optional
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_GA_ID=
-RESEND_API_KEY=
-
- Security
-
-Never commit .env.local
-Store secrets securely & rotate when needed
-3. Database Setup
-npx prisma generate
-npx prisma db push
-4. Run ML Service (Local)
-cd smartresume-v2
-export FASTAPI_API_KEY=YOUR_KEY   # (Windows: use `set` instead of `export`)
-export DATA_DIR=data
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
-5. Run App
+5. Start Next.js app (new terminal)
+```powershell
+cd <repo-root>
 npm run dev
+```
 
-Open: http://localhost:3000
+## Quick Verification
+Test `/match` directly:
+```powershell
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/match `
+  -Headers @{ "x-api-key" = "<same shared key>" } `
+  -ContentType "application/json" `
+  -Body '{"resume_text":"python react developer"}'
+```
 
-Testing Flow
-Login with Google
-Upload resume
-Click Analyze & Find Jobs
-Check match score & apply
-Recruiter → /recruiter → view ranked applicants
-Common Issues
-404 /api/matches?resumeId=...: re-upload resume
-422 Resume has no parsed content: invalid document → re-upload
-Cloudinary errors: check env vars + system clock
-Port 8000 busy: stop existing process
-Deployment (Vercel)
-Deploy as a single Next.js app (UI + API)
-Add all environment variables in project settings
-.vercelignore excludes non-deployment files
-Highlights
-Full-stack scalable architecture
-ML integration for intelligent matching
-Secure authentication & file handling
-Production-ready deployment setup
-Access / Configuration
+If this returns JSON, auth between frontend and ML service is configured correctly.
 
-Sensitive environment variables are not included.
-Request local development .env file via Telegram: @meha06
+## Troubleshooting
+### `POST /match` returns `401 Unauthorized`
+- Cause: API key mismatch or missing key header.
+- Fix:
+  - Ensure `ML_SERVICE_API_KEY` and `FASTAPI_API_KEY` are set and identical.
+  - Restart both services after any `.env` change.
+
+### Next.js compile error: `stream did not contain valid UTF-8`
+- Cause: one source file saved in UTF-16 or corrupted encoding.
+- Fix:
+  - Re-save affected file as UTF-8 (without null bytes).
+  - This repo includes `.editorconfig` with `charset = utf-8` to reduce recurrence.
+
+### ML startup fails (missing data files)
+- Ensure `data/jobs.pkl` and `data/job_embeddings.pt` exist.
+- Ensure `DATA_DIR` points to the correct `data` directory.
+
+## Security
+- Never commit `.env` or real secrets.
+- Rotate any key that was exposed in screenshots, logs, or chat.

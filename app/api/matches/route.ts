@@ -72,13 +72,14 @@ export async function GET(request: NextRequest) {
         }
 
         const jobs = await getAllJobs();
+        const mlServiceApiKey =
+            process.env.ML_SERVICE_API_KEY ?? process.env.FASTAPI_API_KEY;
+
         const mlRes = await fetch(`${mlServiceUrl}/match`, {
             method: "POST",
             headers: {
                 "content-type": "application/json",
-                ...(process.env.ML_SERVICE_API_KEY
-                    ? { "x-api-key": process.env.ML_SERVICE_API_KEY }
-                    : {}),
+                ...(mlServiceApiKey ? { "x-api-key": mlServiceApiKey } : {}),
             },
             body: JSON.stringify({ resume_text: resumeText }),
             cache: "no-store",
@@ -86,8 +87,12 @@ export async function GET(request: NextRequest) {
 
         if (!mlRes.ok) {
             const detail = await mlRes.text().catch(() => "");
+            const hint =
+                mlRes.status === 401
+                    ? "Unauthorized from ML service. Ensure ML_SERVICE_API_KEY (or FASTAPI_API_KEY) matches backend FASTAPI_API_KEY."
+                    : undefined;
             return NextResponse.json(
-                { error: "ML service failed to compute matches", detail },
+                { error: "ML service failed to compute matches", detail, hint },
                 { status: 502 }
             );
         }
