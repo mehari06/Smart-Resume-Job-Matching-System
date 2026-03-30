@@ -1,23 +1,65 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* Core Design System Tokens */
+  --ink: 15 23 42;
+  --ink-soft: 71 85 105;
+  --muted: 148 163 184;
+  --paper: 255 255 255;
+  --sand: 248 250 252;
+  --mint: 236 253 245;
+  --teal: 20 184 166;
+  --coral: 244 63 94;
+  --ocean: 14 165 233;
+  --glass: 255 255 255;
+  --border: 226 232 240;
+
+  /* Font variables (fallbacks if the Google Font imports in Next.js aren't loaded) */
+  --font-fraunces: "Fraunces", serif;
+  --font-manrope: "Manrope", ui-sans-serif, system-ui;
+
   color-scheme: light;
 }
 
 body {
-  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  @apply min-h-screen bg-sand text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-900;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
+/* Premium Main Gradient */
 .main-gradient {
-  background:
-    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18), transparent 40%),
-    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.14), transparent 35%),
-    linear-gradient(to bottom, #f8fafc, #f8fafc);
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.08), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.05), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.03), transparent 50%),
+    #f8fafc;
 }
 
+/* Dynamic Grid Pattern */
 .grid-dots {
-  background-image: radial-gradient(rgba(100, 116, 139, 0.15) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background-image: radial-gradient(rgba(100, 116, 139, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glassmorphism utility */
+.glass-effect {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+/* Smooth Focus Rings */
+:focus-visible {
+  @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-sand;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
 }

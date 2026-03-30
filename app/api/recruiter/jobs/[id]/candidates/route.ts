@@ -6,7 +6,6 @@ import prisma from "../../../../../../lib/prisma";
 import { getAccountProfile } from "../../../../../../lib/user-profile-store";
 
 export const dynamic = "force-dynamic";
-const DEFAULT_RECRUITER_EMAIL = "mbereket523@gmail.com";
 
 export async function GET(
     _request: NextRequest,
@@ -33,18 +32,7 @@ export async function GET(
                 return NextResponse.json({ error: "Job not found" }, { status: 404 });
             }
 
-            const normalizedEmail = (auth.user.email ?? "").trim().toLowerCase();
-            const defaultOwner = await prisma.user.findUnique({
-                where: { email: DEFAULT_RECRUITER_EMAIL },
-                select: { id: true },
-            });
-            const isDefaultRecruiter =
-                normalizedEmail === DEFAULT_RECRUITER_EMAIL ||
-                (defaultOwner?.id !== undefined && auth.user.id === defaultOwner.id);
-            const isJobOwnedByDefaultRecruiter =
-                defaultOwner?.id !== undefined && job.postedById === defaultOwner.id;
-
-            if (auth.user.role !== "ADMIN" && !isDefaultRecruiter && !(auth.user.role === "RECRUITER" && isJobOwnedByDefaultRecruiter) && job.postedById !== auth.user.id) {
+            if (auth.user.role !== "ADMIN" && job.postedById !== auth.user.id) {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
             }
 
