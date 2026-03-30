@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="card" x1="120" y1="110" x2="1080" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="980" cy="90" r="220" fill="#38BDF8" fill-opacity="0.14"/>
+  <circle cx="150" cy="590" r="260" fill="#6366F1" fill-opacity="0.2"/>
+  <rect x="120" y="110" width="960" height="410" rx="28" fill="url(#card)" stroke="#E2E8F0" stroke-opacity="0.35"/>
+  <text x="190" y="240" fill="#E2E8F0" font-family="Arial, sans-serif" font-size="38" font-weight="700">Smart Resume</text>
+  <text x="190" y="310" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="62" font-weight="800">AI Job Matching</text>
+  <text x="190" y="370" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="30">
+    Resume-to-job scoring with transparent insights
+  </text>
+  <rect x="190" y="415" width="338" height="64" rx="32" fill="#EEF2FF"/>
+  <text x="225" y="456" fill="#3730A3" font-family="Arial, sans-serif" font-size="30" font-weight="700">smartresume.ai</text>
+</svg>
