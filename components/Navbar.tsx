@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { ChevronDown, LogOut, User, LayoutDashboard, Building2, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -59,10 +60,13 @@ export function Navbar() {
                   className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 >
                   {user?.image && !avatarFailed ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={user.image}
                       alt={user.name ?? "User"}
+                      width={24}
+                      height={24}
+                      loading="lazy"
+                      unoptimized
                       className="h-6 w-6 rounded-full object-cover"
                       onError={() => setAvatarFailed(true)}
                     />

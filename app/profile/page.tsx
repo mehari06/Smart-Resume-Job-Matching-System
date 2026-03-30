@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { User, Mail, Shield, Bell, Loader2, Save } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
@@ -127,10 +128,13 @@ export default function ProfilePage() {
                     <div className="space-y-6">
                         <Card className="flex flex-col items-center py-8 text-center">
                             {user?.image && !avatarFailed ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
+                                <Image
                                     src={user.image}
-                                    alt={user.name}
+                                    alt={user.name ?? "User avatar"}
+                                    width={96}
+                                    height={96}
+                                    loading="lazy"
+                                    unoptimized
                                     className="h-24 w-24 rounded-full border-4 border-white shadow-md"
                                     onError={() => setAvatarFailed(true)}
                                 />

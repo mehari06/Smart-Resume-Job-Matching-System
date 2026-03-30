@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Search, Users, Briefcase, FileText, BarChart, Plus, SlidersHorizontal, Sparkles, AlertCircle, Pencil, Trash2, RefreshCw, Save, X, Eye, Download } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
 import { Card } from "../../components/Card";
@@ -66,6 +67,7 @@ export default function RecruiterPage() {
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<EditableJob | null>(null);
   const [selectedJobForCandidates, setSelectedJobForCandidates] = useState<string | null>(null);
+  const [selectedJobDetails, setSelectedJobDetails] = useState<{ id: string; title: string; company: string } | null>(null);
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
   const [candidates, setCandidates] = useState<JobCandidate[]>([]);
 
@@ -219,14 +221,17 @@ export default function RecruiterPage() {
 
   const fetchCandidatesForJob = async (jobId: string) => {
     setSelectedJobForCandidates(jobId);
+    setSelectedJobDetails(null);
     setIsLoadingCandidates(true);
     try {
       const res = await fetch(`/api/recruiter/jobs/${jobId}/candidates`, { cache: "no-store" });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "Failed to load candidates");
+      setSelectedJobDetails(json?.data?.job ?? null);
       setCandidates(Array.isArray(json?.data?.candidates) ? json.data.candidates : []);
     } catch (error) {
       setCandidates([]);
+      setSelectedJobDetails(null);
       toast.error(error instanceof Error ? error.message : "Failed to load candidates");
     } finally {
       setIsLoadingCandidates(false);
@@ -311,6 +316,7 @@ export default function RecruiterPage() {
                   <div className="flex-1 min-w-[200px]">
                     <input
                       type="range"
+                      aria-label="Minimum match score"
                       min={20}
                       max={95}
                       value={minScore}
@@ -443,6 +449,7 @@ export default function RecruiterPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <select
+                              aria-label="Job type"
                               value={editDraft.type}
                               onChange={(e) => setEditDraft({ ...editDraft, type: e.target.value as Job["type"] })}
                               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
@@ -538,6 +545,12 @@ export default function RecruiterPage() {
                 <p className="mt-1 text-xs text-slate-500">
                   Sorted descending for selected job.
                 </p>
+                {selectedJobDetails && (
+                  <div className="mt-2 rounded-lg border border-indigo-100 bg-indigo-50/60 p-2">
+                    <p className="text-xs font-semibold text-indigo-900">{selectedJobDetails.title}</p>
+                    <p className="text-[11px] text-indigo-700">{selectedJobDetails.company}</p>
+                  </div>
+                )}
 
                 <div className="mt-3 space-y-3">
                   {isLoadingCandidates && <p className="text-xs text-slate-500">Loading candidates...</p>}
@@ -551,8 +564,15 @@ export default function RecruiterPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2">
                             {candidate.user.image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={candidate.user.image} alt={candidate.user.name ?? "candidate"} className="h-9 w-9 rounded-full object-cover" />
+                              <Image
+                                src={candidate.user.image}
+                                alt={candidate.user.name ?? "candidate"}
+                                width={36}
+                                height={36}
+                                loading="lazy"
+                                unoptimized
+                                className="h-9 w-9 rounded-full object-cover"
+                              />
                             ) : (
                               <div className="h-9 w-9 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
                                 {(candidate.user.firstName?.[0] ?? candidate.user.name?.[0] ?? "U").toUpperCase()}

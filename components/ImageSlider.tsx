@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SliderProps {
@@ -30,10 +31,15 @@ export function ImageSlider({ images, interval = 5000, className = "" }: SliderP
       >
         {images.map((img, i) => (
           <div key={i} className="min-w-full flex flex-col items-center">
-            <img 
-              src={img.src} 
-              alt={img.alt} 
-              className="w-full h-auto object-contain max-h-[600px] drop-shadow-3xl brightness-110 contrast-[1.05]" 
+            <Image
+              src={img.src}
+              alt={img.alt}
+              width={1400}
+              height={900}
+              priority={i === 0}
+              loading={i === 0 ? "eager" : "lazy"}
+              sizes="(max-width: 1024px) 100vw, 70vw"
+              className="w-full h-auto object-contain max-h-[600px] drop-shadow-3xl brightness-110 contrast-[1.05]"
             />
             {img.label && (
                 <p className="mt-6 text-base font-black tracking-widest text-indigo-600 uppercase italic">
