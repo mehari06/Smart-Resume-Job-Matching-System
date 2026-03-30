@@ -1,0 +1,9 @@
+backend/
+notebooks/
+src/
+smartresume-v2/
+*.log
+playwright-report/
+test-results/
+.pr-main/
+Smart-Resume-Job-Matching-System/

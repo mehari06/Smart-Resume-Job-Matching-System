@@ -4,15 +4,31 @@
  * are connected, replace these functions with DB queries.
  */
 
-import { cache } from "react";
+import fs from "node:fs";
+import path from "node:path";
+
 import type { Job, Resume, MatchResult, JobFilters } from "../types";
 import prisma from "./prisma";
 
-const loadJson = cache(<T>(filename: string): T => {
-    // In Next.js API routes, require() works for JSON files
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(`../data/${filename}.json`) as T;
-});
+function cache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => TResult) {
+    if (process.env.NODE_ENV !== "production") {
+        return fn;
+    }
+    const memo = new Map<string, TResult>();
+    return (...args: TArgs): TResult => {
+        const key = args.length === 1 && typeof args[0] === "string" ? args[0] : JSON.stringify(args);
+        if (memo.has(key)) return memo.get(key) as TResult;
+        const result = fn(...args);
+        memo.set(key, result);
+        return result;
+    };
+}
+
+const loadJson = <T>(filename: string): T => {
+    const filePath = path.join(process.cwd(), "data", `${filename}.json`);
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw) as T;
+};
 
 function mapPrismaResume(resume: any): Resume {
     return {
@@ -23,15 +39,95 @@ function mapPrismaResume(resume: any): Resume {
         targetRole: resume.targetRole ?? undefined,
         experienceYears: resume.experienceYears ?? undefined,
         skills: resume.skills ?? [],
+        summary: resume.parsedText?.slice(0, 2000) ?? undefined,
+        parsedText: resume.parsedText ?? undefined,
         fileName: resume.fileName,
         fileUrl: resume.fileUrl,
         uploadedAt: resume.uploadedAt.toISOString(),
     };
 }
 
+type CategoryRule = {
+    category: string;
+    keywords: string[];
+};
+
+const CATEGORY_RULES: CategoryRule[] = [
+    { category: "AI/ML", keywords: ["machine learning", "ml", "ai", "nlp", "deep learning", "pytorch", "tensorflow", "llm"] },
+    { category: "Data Science", keywords: ["data scientist", "data science", "scikit", "pandas", "analytics", "statistic"] },
+    { category: "Data", keywords: ["data analyst", "bi analyst", "power bi", "tableau", "dashboard", "sql"] },
+    { category: "DevOps", keywords: ["devops", "kubernetes", "docker", "terraform", "ci/cd", "sre"] },
+    { category: "Security", keywords: ["security", "cyber", "soc", "siem", "penetration", "cissp"] },
+    { category: "Cloud", keywords: ["cloud", "aws", "azure", "gcp", "solution architect"] },
+    { category: "Networking", keywords: ["network", "ccna", "cisco", "bgp", "mpls", "active directory", "windows server"] },
+    { category: "Database", keywords: ["database", "dba", "postgresql", "mysql", "query tuning"] },
+    { category: "Mobile", keywords: ["mobile", "react native", "android", "ios"] },
+    { category: "Frontend Engineering", keywords: ["frontend", "front-end", "react", "next.js", "vue", "angular", "tailwind"] },
+    { category: "Fullstack Engineering", keywords: ["full stack", "fullstack", "node.js", "express", "backend", "api"] },
+    { category: "Design", keywords: ["ui/ux", "ui ux", "designer", "figma", "wireframe", "prototype"] },
+    { category: "QA", keywords: ["qa", "quality assurance", "test automation", "playwright", "cypress", "selenium"] },
+    { category: "Product", keywords: ["product manager", "product owner", "roadmap", "prd"] },
+    { category: "Management", keywords: ["scrum", "agile coach", "project manager", "team lead"] },
+    { category: "Content", keywords: ["content writer", "seo", "copywriter", "journalism"] },
+    { category: "Blockchain", keywords: ["blockchain", "solidity", "ethereum", "web3"] },
+    { category: "Hardware/IoT", keywords: ["embedded", "iot", "arduino", "stm32", "sensor", "firmware"] },
+    { category: "Healthcare", keywords: ["doctor", "medical", "nurse", "hospital", "clinic", "pharmacist", "physician"] },
+];
+
+function inferCategory(job: Partial<Job>): string {
+    const text = [
+        job.title ?? "",
+        job.description ?? "",
+        Array.isArray(job.skills) ? job.skills.join(" ") : "",
+    ]
+        .join(" ")
+        .toLowerCase();
+
+    let bestCategory = "";
+    let bestScore = 0;
+
+    for (const rule of CATEGORY_RULES) {
+        const score = rule.keywords.reduce((sum, keyword) => {
+            return sum + (text.includes(keyword) ? 1 : 0);
+        }, 0);
+        if (score > bestScore) {
+            bestScore = score;
+            bestCategory = rule.category;
+        }
+    }
+
+    if (bestScore > 0) return bestCategory;
+    return job.category ?? "Engineering";
+}
+
+function normalizeJob(raw: any): Job {
+    const base = {
+        ...raw,
+        id: raw.id,
+        type: raw.type as any,
+        source: raw.source as any,
+        salary: raw.salary ?? undefined,
+        experience: (raw.experience as any) ?? "Mid-level",
+        postedAt: raw.postedAt instanceof Date ? raw.postedAt.toISOString() : raw.postedAt,
+        deadline: raw.deadline instanceof Date ? raw.deadline?.toISOString() : raw.deadline,
+    };
+
+    return {
+        ...base,
+        category: inferCategory({
+            title: raw.title,
+            description: raw.description,
+            skills: raw.skills,
+            category: raw.category,
+        }),
+    } as Job;
+}
+
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 
 export const getAllJobs = cache(async (): Promise<Job[]> => {
+    const jsonJobs = loadJson<Job[]>("jobs").map((j) => normalizeJob(j));
+
     try {
         const jobs = await prisma.job.findMany({
             where: { isActive: true },
@@ -39,42 +135,43 @@ export const getAllJobs = cache(async (): Promise<Job[]> => {
         });
 
         if (jobs.length > 0) {
-            return jobs.map((j: any) => ({
-                ...j,
-                id: j.id,
-                type: j.type as any,
-                source: j.source as any,
-                salary: j.salary ?? undefined,
-                category: j.category ?? "Engineering",
-                experience: (j.experience as any) ?? "Mid-level",
-                postedAt: j.postedAt.toISOString(),
-                deadline: j.deadline?.toISOString(),
-            }));
+            const prismaJobs = jobs.map((j: any) =>
+                normalizeJob({
+                    ...j,
+                    postedAt: j.postedAt.toISOString(),
+                    deadline: j.deadline?.toISOString(),
+                })
+            );
+
+            // Keep JSON jobs as canonical baseline (stable IDs/skills/categories for ML + UI),
+            // and append recruiter-created Prisma-only jobs.
+            const prismaById = new Map(prismaJobs.map((j) => [j.id, j]));
+            const canonical = jsonJobs.map((j) => {
+                const prismaJob = prismaById.get(j.id);
+                if (!prismaJob) return j;
+                return {
+                    ...prismaJob,
+                    ...j,
+                    id: j.id,
+                    title: j.title,
+                    company: j.company,
+                    description: j.description,
+                    skills: j.skills,
+                    category: j.category,
+                };
+            });
+
+            const jsonIds = new Set(jsonJobs.map((j) => j.id));
+            const prismaOnly = prismaJobs.filter((j) => !jsonIds.has(j.id));
+            return [...canonical, ...prismaOnly];
         }
     } catch (e) {
         console.warn("Prisma fallback to JSON jobs", e);
     }
-    return loadJson<Job[]>("jobs");
+    return jsonJobs;
 });
 
 export const getJobById = cache(async (id: string): Promise<Job | undefined> => {
-    try {
-        const job = await prisma.job.findUnique({ where: { id } });
-        if (job) {
-            return {
-                ...job,
-                type: job.type as any,
-                source: job.source as any,
-                salary: job.salary ?? undefined,
-                category: job.category ?? "Engineering",
-                experience: (job.experience as any) ?? "Mid-level",
-                postedAt: job.postedAt.toISOString(),
-                deadline: job.deadline?.toISOString(),
-            };
-        }
-    } catch (e) {
-        console.warn("Prisma fallback to JSON job by id", e);
-    }
     const jobs = await getAllJobs();
     return jobs.find((j) => j.id === id);
 });
@@ -123,6 +220,7 @@ export async function getJobCategories(): Promise<string[]> {
 // ─── Resumes ──────────────────────────────────────────────────────────────────
 
 export const getAllResumes = cache(async (): Promise<Resume[]> => {
+    let allResumes: Resume[] = [];
     try {
         const resumes = await prisma.resume.findMany({
             where: { isActive: true },
@@ -136,13 +234,27 @@ export const getAllResumes = cache(async (): Promise<Resume[]> => {
                 },
             },
         });
-        if (resumes.length > 0) {
-            return resumes.map(mapPrismaResume);
-        }
+        allResumes = resumes.map(mapPrismaResume);
     } catch (e) {
-        console.warn("Prisma fallback to JSON resumes", e);
+        console.warn("Prisma failed in getAllResumes", e);
     }
-    return loadJson<Resume[]>("resumes");
+    
+    try {
+        const jsonResumes = loadJson<Resume[]>("resumes");
+        // Merge without duplicates
+        const prismaIds = new Set(allResumes.map(r => r.id));
+        const merged = [
+            ...allResumes,
+            ...jsonResumes.filter(r => !prismaIds.has(r.id))
+        ];
+        // Sort by uploadedAt desc
+        return merged.sort((a, b) => 
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        );
+    } catch (e) {
+        console.warn("JSON load failed in getAllResumes", e);
+        return allResumes;
+    }
 });
 
 export const getResumeById = cache(async (id: string): Promise<Resume | undefined> => {
@@ -169,6 +281,7 @@ export const getResumeById = cache(async (id: string): Promise<Resume | undefine
 });
 
 export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]> => {
+    let allResumes: Resume[] = [];
     try {
         const resumes = await prisma.resume.findMany({
             where: { userId, isActive: true },
@@ -182,14 +295,24 @@ export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]
                 },
             },
         });
-        if (resumes.length > 0) {
-            return resumes.map(mapPrismaResume);
-        }
+        allResumes = resumes.map(mapPrismaResume);
     } catch (e) {
-        console.warn("Prisma fallback to JSON resumes by user", e);
+        console.warn("Prisma failed in getResumesByUserId", e);
     }
-    const resumes = await getAllResumes();
-    return resumes.filter((r: any) => r.userId === userId);
+    
+    try {
+        const jsonResumes = loadJson<Resume[]>("resumes").filter((r: any) => r.userId === userId);
+        const prismaIds = new Set(allResumes.map(r => r.id));
+        const merged = [
+            ...allResumes,
+            ...jsonResumes.filter((r: any) => !prismaIds.has(r.id))
+        ];
+        return merged.sort((a, b) => 
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        );
+    } catch (e) {
+        return allResumes;
+    }
 });
 
 // ─── Matches ──────────────────────────────────────────────────────────────────
@@ -203,10 +326,9 @@ export const getMatchesByResumeId = cache(async (resumeId: string): Promise<Matc
             take: 5,
         });
         if (matches.length > 0) {
-            // Transform Prisma Match into MatchResult format
             return {
                 resumeId,
-                candidateName: "User", // This should come from user/resume relation
+                candidateName: "User",
                 matches: matches.map((m: any) => ({
                     jobId: m.jobId,
                     jobTitle: m.job.title,
@@ -227,8 +349,6 @@ export const getMatchesByResumeId = cache(async (resumeId: string): Promise<Matc
 });
 
 // ─── Recruiter search (simulated) ─────────────────────────────────────────────
-// When ML is integrated, this calls the Python microservice.
-// For now: keyword-based overlap scoring.
 
 export async function searchResumesByJobDescription(
     jobDescription: string,
