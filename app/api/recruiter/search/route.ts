@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSessionUser } from "../../../../lib/api-auth";
 import { getAllResumes, searchResumesByJobDescription } from "../../../../lib/data";
+import { recordServerError } from "../../../../lib/monitoring-server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,13 +35,12 @@ export async function POST(request: NextRequest) {
         const mlServiceUrl = process.env.ML_SERVICE_URL?.replace(/\/+$/, "");
         if (mlServiceUrl) {
             const resumes = await getAllResumes();
+            const mlServiceApiKey = process.env.ML_SERVICE_API_KEY ?? process.env.FASTAPI_API_KEY;
             const mlRes = await fetch(`${mlServiceUrl}/recruiter-search`, {
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    ...(process.env.ML_SERVICE_API_KEY
-                        ? { "x-api-key": process.env.ML_SERVICE_API_KEY }
-                        : {}),
+                    ...(mlServiceApiKey ? { "x-api-key": mlServiceApiKey } : {}),
                 },
                 body: JSON.stringify({
                     jobDescription: body.jobDescription,
@@ -93,6 +93,12 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error("[POST /api/recruiter/search]", error);
+        await recordServerError({
+            type: "next.recruiter_search_failed",
+            message: "Recruiter search API failed",
+            path: "/api/recruiter/search",
+            error,
+        });
         return NextResponse.json({ error: "Search failed" }, { status: 500 });
     }
 }
