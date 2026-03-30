@@ -1,44 +1,51 @@
-﻿import "./globals.css";
+import "./globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import dynamic from "next/dynamic";
 import { AuthProvider } from "../components/providers/AuthProvider";
 import { QueryProvider } from "../components/providers/QueryProvider";
+import { MonitoringProvider } from "../components/providers/MonitoringProvider";
 import { GoogleAnalytics } from "../components/GoogleAnalytics";
 import { AppStateProvider } from "../components/AppStateProvider";
-import dynamic from "next/dynamic";
+import { buildMetadata } from "../components/SEO";
+import { StructuredData, buildOrganizationSchema } from "../components/StructuredData";
 
 const Toaster = dynamic(() => import("sonner").then((mod) => mod.Toaster), { ssr: false });
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
+  ...buildMetadata({
+    title: "Smart Resume - AI Job Matching",
+    description:
+      "Intelligent resume-to-job matching using TF-IDF and cosine similarity. Find your top job matches with transparent scoring.",
+    path: "/",
+    keywords: ["resume matching", "job search", "AI matching", "Ethiopia jobs", "Afriwork", "career"],
+  }),
+  applicationName: "Smart Resume",
   title: {
-    default: "Smart Resume – AI Job Matching",
+    default: "Smart Resume - AI Job Matching",
     template: "%s | Smart Resume",
   },
-  description:
-    "Intelligent resume-to-job matching using TF-IDF and cosine similarity. Find your top 5 job matches with transparent scoring.",
-  keywords: ["resume matching", "job search", "AI matching", "Ethiopia jobs", "Afriwork", "career"],
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: process.env.NEXT_PUBLIC_APP_URL,
-    siteName: "Smart Resume",
-    title: "Smart Resume – AI Job Matching",
-    description: "Intelligent resume-to-job matching for African job seekers.",
-  },
+  category: "technology",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en-US">
+      <body>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:text-slate-900"
+        >
+          Skip to main content
+        </a>
         <AuthProvider>
           <QueryProvider>
-            <AppStateProvider>
-              {children}
-              <Toaster position="bottom-right" richColors closeButton />
-            </AppStateProvider>
+            <MonitoringProvider>
+              <AppStateProvider>
+                <StructuredData id="org-schema" data={buildOrganizationSchema()} />
+                {children}
+                <Toaster position="bottom-right" richColors closeButton />
+              </AppStateProvider>
+            </MonitoringProvider>
           </QueryProvider>
         </AuthProvider>
         <GoogleAnalytics trackingId={process.env.NEXT_PUBLIC_GA_ID || ""} />
