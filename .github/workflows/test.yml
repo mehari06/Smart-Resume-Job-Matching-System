@@ -42,7 +42,12 @@ jobs:
           
       - name: Run Unit & Integration Tests (Jest)
         run: npm run test:unit
-        
+        env:
+          DATABASE_URL: postgresql://test:testpassword@localhost:5432/test_smartresume
+          NEXTAUTH_SECRET: test-secret-1234567890-abcdef
+          NEXTAUTH_URL: http://localhost:3000
+          ML_SERVICE_URL: http://localhost:8000
+          
       - name: Run Cypress E2E Tests
         uses: cypress-io/github-action@v5
         with:
@@ -51,3 +56,6 @@ jobs:
           wait-on: 'http://localhost:3000'
         env:
           DATABASE_URL: postgresql://test:testpassword@localhost:5432/test_smartresume
+          NEXTAUTH_SECRET: test-secret-1234567890-abcdef
+          NEXTAUTH_URL: http://localhost:3000
+          ML_SERVICE_URL: http://localhost:8000
