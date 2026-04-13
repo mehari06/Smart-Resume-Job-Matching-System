@@ -8,6 +8,7 @@ import { Navbar } from "../../components/Navbar";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { toast } from "sonner";
+import { withCsrfHeaders } from "../../lib/client-security";
 
 function getInitials(name?: string | null): string {
     if (!name) return "U";
@@ -75,6 +76,7 @@ export default function ProfilePage() {
 
         try {
             const res = await fetch("/api/users/me", {
+                ...withCsrfHeaders({
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -86,6 +88,7 @@ export default function ProfilePage() {
                     education,
                     fieldOfStudy,
                     isStudent,
+                }),
                 }),
             });
             const json = await res.json();

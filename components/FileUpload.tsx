@@ -27,11 +27,10 @@ export function FileUpload({ onFileAccepted, maxSize = 10 * 1024 * 1024 }: Props
     onDrop,
     maxFiles: 1,
     maxSize,
-    accept: {
-      "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-      "application/msword": [".doc"],
-    },
+      accept: {
+        "application/pdf": [".pdf"],
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      },
   });
 
   const removeFile = (e: React.MouseEvent) => {
@@ -88,7 +87,7 @@ export function FileUpload({ onFileAccepted, maxSize = 10 * 1024 * 1024 }: Props
                 {isDragActive ? "Drop it here!" : "Upload your resume"}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                PDF, DOCX or DOC (max 10MB)
+                PDF or DOCX (max 10MB)
               </p>
               <div className="mt-4 flex gap-2">
                 <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">

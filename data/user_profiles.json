@@ -4,10 +4,10 @@
         "firstName": "Mehari",
         "lastName": "Bereket",
         "city": "Hawassa",
-        "age": 21,
+        "age": 22,
         "education": "Bsc",
         "fieldOfStudy": "Computer Science",
         "isStudent": true,
-        "updatedAt": "2026-03-20T12:36:47.822Z"
+        "updatedAt": "2026-04-10T08:54:06.580Z"
     }
 }

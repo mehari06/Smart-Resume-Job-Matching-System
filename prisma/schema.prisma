@@ -59,12 +59,19 @@ model User {
   role          String    @default("SEEKER")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  banned        Boolean   @default(false)
+  approvalStatus String   @default("NONE") // NONE, PENDING, APPROVED, REJECTED
 
   // Relations
   accounts Account[]
   sessions Session[]
   resumes  Resume[]
-  jobs     Job[]     @relation("RecruiterJobs")
+  jobs     Job[]         @relation("RecruiterJobs")
+  applications Application[]
+  activityLogs ActivityLog[]
+  reports   UserReport[] @relation("ReportedUser")
+  submittedReports UserReport[] @relation("ReportingUser")
+  jobReports JobReport[]
 
   @@map("users")
 }
@@ -112,9 +119,53 @@ model Job {
   postedBy   User?   @relation("RecruiterJobs", fields: [postedById], references: [id])
 
   // Relations
-  matches Match[]
+  matches      Match[]
+  applications Application[]
+  reports      JobReport[]
 
   @@map("jobs")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
+
+model JobReport {
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  reason    String
+  details   String?
+  status    String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  createdAt DateTime @default(now())
+  
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("job_reports")
+}
+
+model UserReport {
+  id        String   @id @default(cuid())
+  reportedId String
+  reporterId String
+  reason    String
+  details   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  reported User @relation("ReportedUser", fields: [reportedId], references: [id], onDelete: Cascade)
+  reporter User @relation("ReportingUser", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@map("user_reports")
 }
 
 model Match {
@@ -134,4 +185,21 @@ model Match {
 
   @@unique([resumeId, jobId])
   @@map("matches")
+}
+
+model Application {
+  id            String   @id @default(cuid())
+  jobId         String
+  userId        String
+  applicantName String
+  email         String
+  resumeURL     String // Uploaded file URL or external link
+  createdAt     DateTime @default(now())
+
+  // Relations
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId]) // Prevent dual-application to same job
+  @@map("applications")
 }

@@ -102,31 +102,35 @@ function computeMissingSkills(jobSkills: string[] = [], resumeSkills: string[] =
 export function buildRankedMatches(options: BuildOptions): RankedMatch[] {
     const { raw, jobs, resumeText, resumeSkills, threshold, minFallback } = options;
 
+    // The user explicitly requested STRICT ML scores only.
+    // Iterating exclusively over the 5 raw results returned by the Python Hugging Face service.
     const scored = raw
         .map((item) => {
-            const job =
-                (typeof item.job_idx === "number" ? jobs[item.job_idx] : undefined) ??
-                jobs.find((j) => j.title === item.job_title);
-            const overlap = computeSkillOverlap(job?.skills ?? [], resumeSkills, resumeText);
-            const affinity = computeTitleAffinity(job?.title ?? item.job_title ?? "", resumeText);
-            const penalty = computeDomainPenalty(job?.title ?? item.job_title ?? "", job?.category, resumeText, overlap);
-            const base = toPercent(item.score);
-            const adjusted = Math.max(0, Math.min(100, base + overlap * 4 + affinity * 5 - penalty));
+            // Attempt to find the job in our database to hook up the ID, but do not override the ML title
+            const job = jobs.find((j) => normalize(j.title) === normalize(item.job_title ?? ""));
+
+            // Strict ML Scoring. No Next.js heuristics, overlaps, or affinities added!
+            const pureMLScore = toPercent(item.score);
 
             return {
                 jobId: job?.id,
                 jobTitle: job?.title ?? item.job_title ?? "Unknown role",
                 company: job?.company ?? "Unknown company",
-                similarityScore: adjusted,
+                similarityScore: pureMLScore, 
+                _rankingScore: pureMLScore, 
                 rank: 0,
                 matchedSkills: (job?.skills ?? []).filter((skill) =>
                     resumeSkills.some((rs) => normalize(rs) === normalize(skill))
                 ),
                 missingSkills: computeMissingSkills(job?.skills ?? [], resumeSkills),
-                explanation: "Semantic ML match",
+                explanation: "Pure ML Algorithm Match",
             } as RankedMatch;
         })
-        .sort((a, b) => b.similarityScore - a.similarityScore);
+        .sort((a, b) => b._rankingScore - a._rankingScore)
+        .map(item => {
+            const { _rankingScore, ...rest } = item;
+            return rest as RankedMatch;
+        });
 
     const thresholded = scored.filter((m) => m.similarityScore >= threshold);
     const fallbackCount = Math.max(3, minFallback);

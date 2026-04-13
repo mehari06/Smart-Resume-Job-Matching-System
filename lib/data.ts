@@ -126,49 +126,23 @@ function normalizeJob(raw: any): Job {
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 
 export const getAllJobs = cache(async (): Promise<Job[]> => {
-    const jsonJobs = loadJson<Job[]>("jobs").map((j) => normalizeJob(j));
-
     try {
         const jobs = await prisma.job.findMany({
             where: { isActive: true },
             orderBy: { postedAt: "desc" },
         });
 
-        if (jobs.length > 0) {
-            const prismaJobs = jobs.map((j: any) =>
-                normalizeJob({
-                    ...j,
-                    postedAt: j.postedAt.toISOString(),
-                    deadline: j.deadline?.toISOString(),
-                })
-            );
-
-            // Keep JSON jobs as canonical baseline (stable IDs/skills/categories for ML + UI),
-            // and append recruiter-created Prisma-only jobs.
-            const prismaById = new Map(prismaJobs.map((j) => [j.id, j]));
-            const canonical = jsonJobs.map((j) => {
-                const prismaJob = prismaById.get(j.id);
-                if (!prismaJob) return j;
-                return {
-                    ...prismaJob,
-                    ...j,
-                    id: j.id,
-                    title: j.title,
-                    company: j.company,
-                    description: j.description,
-                    skills: j.skills,
-                    category: j.category,
-                };
-            });
-
-            const jsonIds = new Set(jsonJobs.map((j) => j.id));
-            const prismaOnly = prismaJobs.filter((j) => !jsonIds.has(j.id));
-            return [...canonical, ...prismaOnly];
-        }
+        return jobs.map((j: any) =>
+            normalizeJob({
+                ...j,
+                postedAt: j.postedAt.toISOString(),
+                deadline: j.deadline?.toISOString(),
+            })
+        );
     } catch (e) {
-        console.warn("Prisma fallback to JSON jobs", e);
+        console.warn("Prisma failed in getAllJobs", e);
+        return [];
     }
-    return jsonJobs;
 });
 
 export const getJobById = cache(async (id: string): Promise<Job | undefined> => {

@@ -3,17 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { isOwnerOrAdmin, requireSessionUser } from "../../../../lib/api-auth";
 import prisma from "../../../../lib/prisma";
-import { v2 as cloudinary } from "cloudinary";
 import { getTrustedUnixTimestampSeconds } from "../../../../lib/cloudinary-utils";
+import { cloudinary, getSignedResumeAssetUrl } from "../../../../lib/cloudinary";
+import { enforceRateLimit } from "../../../../lib/rate-limit";
+import { serverError, validateCsrf } from "../../../../lib/security";
+import { resumePatchSchema } from "../../../../lib/validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 async function loadResumesJson(): Promise<any[]> {
     const resumesPath = path.join(process.cwd(), "data", "resumes.json");
@@ -55,19 +52,19 @@ export async function PATCH(
             return auth.error;
         }
 
-        const body = (await request.json()) as {
-            skills?: unknown;
-            targetRole?: unknown;
-        };
+        const csrfError = validateCsrf(request);
+        if (csrfError) {
+            return csrfError;
+        }
 
-        const skills = normalizeSkills(body.skills);
-        const targetRole = typeof body.targetRole === "string" ? body.targetRole.trim() : undefined;
+        const body = (await request.json()) as { skills?: unknown; targetRole?: unknown };
+        const parsed = resumePatchSchema.safeParse({
+            skills: normalizeSkills(body.skills),
+            targetRole: typeof body.targetRole === "string" ? body.targetRole.trim() : undefined,
+        });
 
-        if (skills.length === 0 && !targetRole) {
-            return NextResponse.json(
-                { error: "Provide at least one skill or targetRole" },
-                { status: 400 }
-            );
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Invalid resume update payload" }, { status: 400 });
         }
 
         try {
@@ -80,12 +77,18 @@ export async function PATCH(
                 const updated = await prisma.resume.update({
                     where: { id: params.id },
                     data: {
-                        ...(skills.length ? { skills } : {}),
-                        ...(targetRole ? { targetRole } : {}),
+                        ...(parsed.data.skills?.length ? { skills: parsed.data.skills } : {}),
+                        ...(parsed.data.targetRole ? { targetRole: parsed.data.targetRole } : {}),
                     },
                 });
 
-                return NextResponse.json({ data: updated, message: "Resume updated" });
+                return NextResponse.json({
+                    data: {
+                        ...updated,
+                        fileUrl: getSignedResumeAssetUrl(updated.filePublicId, updated.fileUrl),
+                    },
+                    message: "Resume updated",
+                });
             }
         } catch (e) {
             console.warn("[PATCH /api/resumes/[id]] Prisma failed, falling back to JSON", e);
@@ -104,17 +107,23 @@ export async function PATCH(
 
         const updated = {
             ...resume,
-            ...(skills.length ? { skills } : {}),
-            ...(targetRole ? { targetRole } : {}),
+            ...(parsed.data.skills?.length ? { skills: parsed.data.skills } : {}),
+            ...(parsed.data.targetRole ? { targetRole: parsed.data.targetRole } : {}),
         };
 
         resumes[idx] = updated;
         await saveResumesJson(resumes);
 
-        return NextResponse.json({ data: updated, message: "Resume updated (JSON fallback)" });
+        return NextResponse.json({
+            data: {
+                ...updated,
+                fileUrl: getSignedResumeAssetUrl(updated.filePublicId, updated.fileUrl),
+            },
+            message: "Resume updated (JSON fallback)",
+        });
     } catch (error) {
         console.error(`[PATCH /api/resumes/${params.id}]`, error);
-        return NextResponse.json({ error: "Failed to update resume" }, { status: 500 });
+        return serverError("Failed to update resume");
     }
 }
 
@@ -126,6 +135,22 @@ export async function DELETE(
         const auth = await requireSessionUser();
         if ("error" in auth) {
             return auth.error;
+        }
+
+        const csrfError = validateCsrf(_request);
+        if (csrfError) {
+            return csrfError;
+        }
+
+        const rateLimitError = enforceRateLimit(_request, {
+            bucket: "resume-delete",
+            userId: auth.user.id,
+            limit: 20,
+            windowMs: 10 * 60 * 1000,
+            message: "Too many delete requests. Please wait and try again.",
+        });
+        if (rateLimitError) {
+            return rateLimitError;
         }
 
         try {
@@ -141,20 +166,27 @@ export async function DELETE(
                 if (resume.filePublicId) {
                     try {
                         const timestamp = await getTrustedUnixTimestampSeconds();
-                        console.log(`[DELETE /api/resumes/${params.id}] Cloudinary destroy start. Id: ${resume.filePublicId}, TS: ${timestamp}`);
-                        const cloudResult = await (cloudinary.uploader as any).destroy(resume.filePublicId, { 
+                        await (cloudinary.uploader as any).destroy(resume.filePublicId, {
                             resource_type: "raw",
+                            type: "authenticated",
                             timestamp
                         });
-                        console.log(`[DELETE /api/resumes/${params.id}] Cloudinary result:`, JSON.stringify(cloudResult));
                     } catch (err) {
-                        console.error(`[DELETE /api/resumes/${params.id}] Cloudinary destroy error (continuing to DB):`, err);
+                        // Cloudinary delete failures shouldn't block the DB delete (e.g. timestamp drift / already removed).
+                        console.warn(`[DELETE /api/resumes/${params.id}] Cloudinary destroy failed`, err);
                     }
                 }
 
-                await prisma.resume.delete({
-                    where: { id: params.id },
-                });
+                try {
+                    await prisma.resume.delete({
+                        where: { id: params.id },
+                    });
+                } catch (err: any) {
+                    // Idempotency: if multiple delete requests race, treat "not found" as success.
+                    if (err?.code !== "P2025") {
+                        throw err;
+                    }
+                }
 
                 return NextResponse.json({ message: "Resume deleted successfully" });
             }
@@ -175,12 +207,11 @@ export async function DELETE(
         if (resume.filePublicId) {
             try {
                 const timestamp = await getTrustedUnixTimestampSeconds();
-                console.log(`[JSON DELETE /api/resumes/${params.id}] Cloudinary destroy start. PublicId: ${resume.filePublicId}, Timestamp: ${timestamp}`);
-                const cloudResult = await (cloudinary.uploader as any).destroy(resume.filePublicId, { 
+                await (cloudinary.uploader as any).destroy(resume.filePublicId, {
                     resource_type: "raw",
+                    type: "authenticated",
                     timestamp
                 });
-                console.log(`[JSON DELETE /api/resumes/${params.id}] Cloudinary destroy result:`, cloudResult);
             } catch (e) {
                 console.warn("[DELETE /api/resumes/[id]] Cloudinary destroy (JSON fallback) failed", e);
             }
@@ -192,6 +223,6 @@ export async function DELETE(
         return NextResponse.json({ message: "Resume deleted successfully (JSON fallback)" });
     } catch (error) {
         console.error(`[DELETE /api/resumes/${params.id}]`, error);
-        return NextResponse.json({ error: "Failed to delete resume" }, { status: 500 });
+        return serverError("Failed to delete resume");
     }
 }

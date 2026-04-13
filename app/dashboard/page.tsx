@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { Skeleton } from "../../components/Skeleton";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useResumes } from "../../hooks/useResumes";
 import { useQueryClient } from "@tanstack/react-query";
+import { withCsrfHeaders } from "../../lib/client-security";
 
 // Removed static DEMO_RESUMES
 
@@ -28,7 +29,21 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
 
   const user = session?.user as any;
+  const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const { data: resumes = [], isLoading: isResumesLoading } = useResumes(user?.id);
+
+  // Fetch the real-time approval status from the DB
+  useEffect(() => {
+    if (status === "authenticated" && user?.id) {
+      fetch("/api/recruiter/request-access")
+        .then(res => res.json())
+        .then(data => {
+          if (data.approvalStatus) setRequestStatus(data.approvalStatus);
+        })
+        .catch(() => {});
+    }
+  }, [status, user?.id]);
+
   const handleAnalyze = () => {
     if (!activeResumeId) return;
     startTransition(() => {
@@ -41,7 +56,7 @@ export default function DashboardPage() {
     setUploadedFileName(file.name);
     try {
       // 1. Get signature from our API
-      const signRes = await fetch("/api/cloudinary/sign", { method: "POST" });
+      const signRes = await fetch("/api/cloudinary/sign", withCsrfHeaders({ method: "POST" }));
       const signData = await signRes.json().catch(() => ({}));
       if (!signRes.ok) {
         throw new Error(signData?.error ?? "Failed to get Cloudinary signature");
@@ -53,7 +68,9 @@ export default function DashboardPage() {
       formData.append("api_key", signData.apiKey);
       formData.append("timestamp", signData.timestamp);
       formData.append("signature", signData.signature);
-      formData.append("folder", "resumes");
+      formData.append("folder", signData.folder);
+      formData.append("public_id", signData.publicId);
+      formData.append("type", signData.uploadType);
 
       const cloudRes = await fetch(
         `https://api.cloudinary.com/v1_1/${signData.cloudName}/raw/upload`,
@@ -74,10 +91,10 @@ export default function DashboardPage() {
       payload.append("skills", JSON.stringify([]));
       payload.append("targetRole", "Analyzing...");
 
-      const dbRes = await fetch("/api/resumes", {
+      const dbRes = await fetch("/api/resumes", withCsrfHeaders({
         method: "POST",
         body: payload,
-      });
+      }));
       const dbData = await dbRes.json().catch(() => ({}));
       if (!dbRes.ok || !dbData?.data?.id) {
         throw new Error(dbData?.error ?? "Failed to save resume");
@@ -97,7 +114,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/resumes/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/resumes/${id}`, withCsrfHeaders({ method: "DELETE" }));
       if (res.ok) {
         toast.success("Resume deleted");
         queryClient.invalidateQueries({ queryKey: ["resumes", user?.id] });
@@ -105,6 +122,28 @@ export default function DashboardPage() {
       }
     } catch (e) {
       toast.error("Delete failed");
+    }
+  };
+
+  const handleRequestRecruiter = async () => {
+    try {
+      const res = await fetch("/api/recruiter/request-access", withCsrfHeaders({ method: "POST" }));
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Recruiter access requested successfully");
+        setRequestStatus(data.status);
+        // Redirect to the waiting page
+        router.push("/recruiter-pending");
+      } else {
+        // If already pending, also redirect to the waiting page
+        if (data.error?.includes("already") || requestStatus === "PENDING") {
+          router.push("/recruiter-pending");
+        } else {
+          toast.error(data.error || "Failed to request access");
+        }
+      }
+    } catch (e) {
+      toast.error("Failed to request access");
     }
   };
 
@@ -203,6 +242,37 @@ export default function DashboardPage() {
                   <Link href="/jobs?category=Engineering">Engineering Jobs</Link>
                 </Button>
               </div>
+              {user?.role === "SEEKER" && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <p className="text-sm text-slate-600 mb-2">Want to post jobs instead?</p>
+                  {requestStatus === "APPROVED" ? (
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-xs text-emerald-800">
+                      <p className="font-semibold mb-1">🎉 You've been approved!</p>
+                      <p>Please log out and log back in to activate your recruiter dashboard.</p>
+                    </div>
+                  ) : requestStatus === "PENDING" ? (
+                    <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-xs text-amber-800">
+                      <p className="font-semibold mb-1">⏳ Request Under Review</p>
+                      <p className="mb-2">An admin is reviewing your recruiter application.</p>
+                      <button
+                        onClick={() => router.push("/recruiter-pending")}
+                        className="text-amber-700 underline underline-offset-2 hover:text-amber-900 font-medium"
+                      >
+                        View status →
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full relative"
+                      onClick={handleRequestRecruiter}
+                    >
+                      Request Recruiter Access
+                    </Button>
+                  )}
+                </div>
+              )}
             </Card>
           </div>
 

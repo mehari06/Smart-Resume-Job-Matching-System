@@ -28,10 +28,12 @@ function LoginPageContent() {
   const error = searchParams.get("error");
 
   useEffect(() => {
-    if (status === "authenticated") {
+    // If we were redirected here due to a role mismatch, keep the user on this page
+    // so they can choose a different account.
+    if (status === "authenticated" && !error) {
       router.replace("/dashboard");
     }
-  }, [status, router]);
+  }, [status, router, error]);
 
   const handleGoogle = () => {
     startTransition(() => {
@@ -47,6 +49,9 @@ function LoginPageContent() {
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Welcome to Smart Resume</h1>
           <p className="mt-2 text-sm text-slate-600">
             Sign in to access your personalised job matching dashboard.
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Note: Recruiter access is granted by server-side allowlist (email/domain) or an admin-set role.
           </p>
 
           {error === "insufficient_role" && (

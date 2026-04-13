@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { ChevronDown, LogOut, User, LayoutDashboard, Building2, Menu, X } from "lucide-react";
+import { ChevronDown, LogOut, User, Users, LayoutDashboard, Building2, Menu, X, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Button } from "./Button";
@@ -22,6 +22,7 @@ export function Navbar() {
 
   const user = session?.user as any;
   const isRecruiter = user?.role === "RECRUITER" || user?.role === "recruiter";
+  const isAdmin = user?.role === "ADMIN";
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "SR";
@@ -104,16 +105,39 @@ export function Navbar() {
                     </Link>
                   </DropdownMenu.Item>
 
-                  {isRecruiter && (
+                  {isAdmin && (
                     <DropdownMenu.Item asChild>
                       <Link
-                        href="/recruiter"
-                        className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-50 focus:bg-slate-50"
+                        href="/admin/users"
+                        className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-indigo-600 font-medium outline-none hover:bg-slate-50 focus:bg-slate-50"
                       >
-                        <Building2 className="h-4 w-4 text-slate-400" />
-                        Recruiter Portal
+                        <Shield className="h-4 w-4" />
+                        Admin Panel
                       </Link>
                     </DropdownMenu.Item>
+                  )}
+
+                  {isRecruiter && (
+                    <>
+                      <DropdownMenu.Item asChild>
+                        <Link
+                          href="/recruiter"
+                          className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-50 focus:bg-slate-50"
+                        >
+                          <Building2 className="h-4 w-4 text-slate-400" />
+                          Recruiter Portal
+                        </Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item asChild>
+                        <Link
+                          href="/recruiter/applicants"
+                          className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-50 focus:bg-slate-50"
+                        >
+                          <Users className="h-4 w-4 text-slate-400" />
+                          Candidates List
+                        </Link>
+                      </DropdownMenu.Item>
+                    </>
                   )}
 
                   <DropdownMenu.Item asChild>

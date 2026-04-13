@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSessionUser } from "../../../../lib/api-auth";
 import { getAllResumes, searchResumesByJobDescription } from "../../../../lib/data";
 import { recordServerError } from "../../../../lib/monitoring-server";
+import { enforceRateLimit } from "../../../../lib/rate-limit";
+import { serverError, validateCsrf } from "../../../../lib/security";
+import { recruiterSearchSchema } from "../../../../lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +23,28 @@ export async function POST(request: NextRequest) {
             return auth.error;
         }
 
-        const body = (await request.json()) as {
-            jobDescription?: string;
-            minScore?: number;
-        };
+        const csrfError = validateCsrf(request);
+        if (csrfError) {
+            return csrfError;
+        }
 
-        if (!body.jobDescription || body.jobDescription.trim().length < 20) {
+        const rateLimitError = enforceRateLimit(request, {
+            bucket: "recruiter-search",
+            userId: auth.user.id,
+            limit: 30,
+            windowMs: 10 * 60 * 1000,
+            message: "Too many recruiter searches. Please wait before trying again.",
+        });
+        if (rateLimitError) {
+            return rateLimitError;
+        }
+
+        const body = (await request.json()) as Record<string, unknown>;
+        const parsed = recruiterSearchSchema.safeParse(body);
+
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: "Job description must be at least 20 characters" },
+                { error: "Invalid recruiter search payload" },
                 { status: 400 }
             );
         }
@@ -36,26 +53,14 @@ export async function POST(request: NextRequest) {
         if (mlServiceUrl) {
             const resumes = await getAllResumes();
             const mlServiceApiKey = process.env.ML_SERVICE_API_KEY ?? process.env.FASTAPI_API_KEY;
-            const mlRes = await fetch(`${mlServiceUrl}/recruiter-search`, {
+            const mlRes = await fetch(`${mlServiceUrl}/match`, {
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
                     ...(mlServiceApiKey ? { "x-api-key": mlServiceApiKey } : {}),
                 },
                 body: JSON.stringify({
-                    jobDescription: body.jobDescription,
-                    resumes: resumes.map((r) => ({
-                        id: r.id,
-                        candidateName: r.candidateName,
-                        targetRole: r.targetRole,
-                        experienceYears: r.experienceYears,
-                        education: r.education,
-                        summary: r.summary ?? (r as any).parsedText,
-                        skills: r.skills,
-                        experience: r.experience,
-                    })),
-                    minScore: body.minScore ?? 30,
-                    topK: 20,
+                    resume_text: parsed.data.jobDescription,
                 }),
             });
 
@@ -71,8 +76,8 @@ export async function POST(request: NextRequest) {
         }
 
         const results = await searchResumesByJobDescription(
-            body.jobDescription,
-            body.minScore ?? 30
+            parsed.data.jobDescription,
+            parsed.data.minScore ?? 30
         );
 
         const safeResults = results.map(({ resume, matchScore, matchedSkills }) => ({
@@ -99,6 +104,6 @@ export async function POST(request: NextRequest) {
             path: "/api/recruiter/search",
             error,
         });
-        return NextResponse.json({ error: "Search failed" }, { status: 500 });
+        return serverError("Search failed");
     }
 }

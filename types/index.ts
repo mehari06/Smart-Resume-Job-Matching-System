@@ -42,6 +42,7 @@ export interface Resume {
   parsedText?: string;
   fileName: string;
   fileUrl: string;
+  filePublicId?: string;
   uploadedAt: string;
 }
 

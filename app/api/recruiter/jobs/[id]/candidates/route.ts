@@ -4,6 +4,7 @@ import path from "node:path";
 import { requireSessionUser } from "../../../../../../lib/api-auth";
 import prisma from "../../../../../../lib/prisma";
 import { getAccountProfile } from "../../../../../../lib/user-profile-store";
+import { getSignedResumeAssetUrl } from "../../../../../../lib/cloudinary";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,10 @@ export async function GET(
                 return NextResponse.json({ error: "Job not found" }, { status: 404 });
             }
 
+            if (auth.user.role !== "ADMIN" && foundJob.postedById !== auth.user.id) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+
             const collected: any[] = [];
             for (const [resumeId, result] of Object.entries(matchesMap)) {
                 const matchEntry = (result?.matches ?? []).find((m: any) => m?.jobId === params.id);
@@ -150,7 +155,7 @@ export async function GET(
                     resume: {
                         id: row.resume.id,
                         fileName: row.resume.fileName,
-                        fileUrl: row.resume.fileUrl,
+                        fileUrl: getSignedResumeAssetUrl(row.resume.filePublicId, row.resume.fileUrl),
                         uploadedAt: row.resume.uploadedAt.toISOString(),
                         targetRole: row.resume.targetRole,
                         experienceYears: row.resume.experienceYears,

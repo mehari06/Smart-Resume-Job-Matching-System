@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Upload, FileText, TrendingUp, Send } from "lucide-react";
 import { Button } from "./Button";
 import { toast } from "sonner";
+import { withCsrfHeaders } from "../lib/client-security";
 
 type ResumeItem = {
     id: string;
@@ -77,7 +78,7 @@ export function JobApplyPanel({ jobId }: Props) {
     async function uploadResume(file: File) {
         setIsUploading(true);
         try {
-            const signRes = await fetch("/api/cloudinary/sign", { method: "POST" });
+            const signRes = await fetch("/api/cloudinary/sign", withCsrfHeaders({ method: "POST" }));
             const signData = await signRes.json();
             if (!signRes.ok) {
                 throw new Error(signData?.error ?? "Failed to get upload signature");
@@ -88,7 +89,9 @@ export function JobApplyPanel({ jobId }: Props) {
             formData.append("api_key", signData.apiKey);
             formData.append("timestamp", signData.timestamp);
             formData.append("signature", signData.signature);
-            formData.append("folder", "resumes");
+            formData.append("folder", signData.folder);
+            formData.append("public_id", signData.publicId);
+            formData.append("type", signData.uploadType);
 
             const cloudRes = await fetch(
                 `https://api.cloudinary.com/v1_1/${signData.cloudName}/raw/upload`,
@@ -108,8 +111,10 @@ export function JobApplyPanel({ jobId }: Props) {
             payload.append("targetRole", "Analyzing...");
 
             const saveRes = await fetch("/api/resumes", {
+                ...withCsrfHeaders({
                 method: "POST",
                 body: payload,
+                }),
             });
             const saveJson = await saveRes.json();
             if (!saveRes.ok || !saveJson?.data?.id) {
@@ -135,9 +140,11 @@ export function JobApplyPanel({ jobId }: Props) {
         setResult(null);
         try {
             const res = await fetch(`/api/jobs/${jobId}/apply`, {
+                ...withCsrfHeaders({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ resumeId: selectedResumeId, submit: false }),
+                }),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -164,9 +171,11 @@ export function JobApplyPanel({ jobId }: Props) {
         setIsSubmittingApplication(true);
         try {
             const res = await fetch(`/api/jobs/${jobId}/apply`, {
+                ...withCsrfHeaders({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ resumeId: selectedResumeId, submit: true }),
+                }),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -195,7 +204,7 @@ export function JobApplyPanel({ jobId }: Props) {
                 </span>
                 <input
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.docx"
                     className="hidden"
                     disabled={isUploading}
                     onChange={(e) => {

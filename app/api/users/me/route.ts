@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireSessionUser, syncSessionUser } from "../../../../lib/api-auth";
 import prisma from "../../../../lib/prisma";
 import { getAccountProfile, upsertAccountProfile } from "../../../../lib/user-profile-store";
+import { serverError, validateCsrf } from "../../../../lib/security";
+import { profileUpdateSchema } from "../../../../lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -28,48 +30,44 @@ export async function GET() {
         });
     } catch (error) {
         console.error("[GET /api/users/me]", error);
-        return NextResponse.json({ error: "Failed to get user profile" }, { status: 500 });
+        return serverError("Failed to get user profile");
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
         const auth = await requireSessionUser();
         if ("error" in auth) {
             return auth.error;
         }
 
-        const body = (await request.json()) as {
-            name?: string;
-            firstName?: string;
-            lastName?: string;
-            city?: string;
-            age?: number;
-            education?: string;
-            fieldOfStudy?: string;
-            isStudent?: boolean;
-        };
-        const name = typeof body.name === "string" ? body.name.trim() : "";
+        const csrfError = validateCsrf(request);
+        if (csrfError) {
+            return csrfError;
+        }
 
-        if (!name) {
-            return NextResponse.json({ error: "Name is required" }, { status: 400 });
+        const body = (await request.json()) as Record<string, unknown>;
+        const parsed = profileUpdateSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Invalid profile payload" }, { status: 400 });
         }
 
         await syncSessionUser(auth.user);
 
         const updated = await prisma.user.update({
             where: { id: auth.user.id },
-            data: { name },
+            data: { name: parsed.data.name },
         });
 
         const profile = await upsertAccountProfile(auth.user.id, {
-            firstName: typeof body.firstName === "string" ? body.firstName.trim() : undefined,
-            lastName: typeof body.lastName === "string" ? body.lastName.trim() : undefined,
-            city: typeof body.city === "string" ? body.city.trim() : undefined,
-            age: typeof body.age === "number" && Number.isFinite(body.age) ? body.age : undefined,
-            education: typeof body.education === "string" ? body.education.trim() : undefined,
-            fieldOfStudy: typeof body.fieldOfStudy === "string" ? body.fieldOfStudy.trim() : undefined,
-            isStudent: typeof body.isStudent === "boolean" ? body.isStudent : undefined,
+            firstName: parsed.data.firstName,
+            lastName: parsed.data.lastName,
+            city: parsed.data.city,
+            age: parsed.data.age,
+            education: parsed.data.education,
+            fieldOfStudy: parsed.data.fieldOfStudy,
+            isStudent: parsed.data.isStudent,
         });
 
         return NextResponse.json({
@@ -81,6 +79,6 @@ export async function PUT(request: Request) {
         });
     } catch (error) {
         console.error("[PUT /api/users/me]", error);
-        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+        return serverError("Failed to update profile");
     }
 }

@@ -3,6 +3,8 @@ import { getJobById } from "../../../../lib/data";
 import { requireSessionUser, syncSessionUser } from "../../../../lib/api-auth";
 import { parseJobSource, parseJobType, serializeJob } from "../../../../lib/job-utils";
 import prisma from "../../../../lib/prisma";
+import { serverError, validateCsrf } from "../../../../lib/security";
+import { jobUpdateSchema } from "../../../../lib/validation";
 
 /**
  * GET /api/jobs/[id]   — Public: get single job detail
@@ -31,7 +33,7 @@ export async function GET(
         return NextResponse.json({ data: job });
     } catch (error) {
         console.error(`[GET /api/jobs/${params.id}]`, error);
-        return NextResponse.json({ error: "Failed to fetch job" }, { status: 500 });
+        return serverError("Failed to fetch job");
     }
 }
 
@@ -43,6 +45,11 @@ export async function PUT(
         const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
         if ("error" in auth) {
             return auth.error;
+        }
+
+        const csrfError = validateCsrf(request);
+        if (csrfError) {
+            return csrfError;
         }
 
         await syncSessionUser(auth.user);
@@ -61,10 +68,15 @@ export async function PUT(
         }
 
         const body = (await request.json()) as Record<string, unknown>;
+        const parsed = jobUpdateSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Invalid job update payload" }, { status: 400 });
+        }
+
         const rawDeadline =
-            typeof body.deadline === "string" && body.deadline
-                ? new Date(body.deadline)
-                : body.deadline === null
+            typeof parsed.data.deadline === "string" && parsed.data.deadline
+                ? new Date(parsed.data.deadline)
+                : parsed.data.deadline === null
                   ? null
                   : undefined;
         const deadline =
@@ -79,22 +91,22 @@ export async function PUT(
         const updated = await prisma.job.update({
             where: { id: params.id },
             data: {
-                title: typeof body.title === "string" ? body.title.trim() : undefined,
-                company: typeof body.company === "string" ? body.company.trim() : undefined,
-                location: typeof body.location === "string" ? body.location.trim() : undefined,
-                description: typeof body.description === "string" ? body.description.trim() : undefined,
+                title: typeof parsed.data.title === "string" ? parsed.data.title.trim() : undefined,
+                company: typeof parsed.data.company === "string" ? parsed.data.company.trim() : undefined,
+                location: typeof parsed.data.location === "string" ? parsed.data.location.trim() : undefined,
+                description: typeof parsed.data.description === "string" ? parsed.data.description.trim() : undefined,
                 salary:
-                    typeof body.salary === "string"
-                        ? body.salary.trim() || null
-                        : body.salary === null
+                    typeof parsed.data.salary === "string"
+                        ? parsed.data.salary.trim() || null
+                        : parsed.data.salary === null
                           ? null
                           : undefined,
-                category: typeof body.category === "string" ? body.category.trim() : undefined,
-                experience: typeof body.experience === "string" ? body.experience.trim() : undefined,
-                type: body.type !== undefined ? parseJobType(body.type) : undefined,
-                source: body.source !== undefined ? parseJobSource(body.source) : undefined,
-                skills: Array.isArray(body.skills)
-                    ? body.skills.filter((skill): skill is string => typeof skill === "string" && !!skill.trim())
+                category: typeof parsed.data.category === "string" ? parsed.data.category.trim() : undefined,
+                experience: typeof parsed.data.experience === "string" ? parsed.data.experience.trim() : undefined,
+                type: parsed.data.type !== undefined ? parseJobType(parsed.data.type) : undefined,
+                source: parsed.data.source !== undefined ? parseJobSource(parsed.data.source) : undefined,
+                skills: Array.isArray(parsed.data.skills)
+                    ? parsed.data.skills.filter((skill): skill is string => typeof skill === "string" && !!skill.trim())
                     : undefined,
                 deadline,
             },
@@ -103,7 +115,7 @@ export async function PUT(
         return NextResponse.json({ data: updated, message: "Job updated" });
     } catch (error) {
         console.error(`[PUT /api/jobs/${params.id}]`, error);
-        return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
+        return serverError("Failed to update job");
     }
 }
 
@@ -115,6 +127,11 @@ export async function DELETE(
         const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
         if ("error" in auth) {
             return auth.error;
+        }
+
+        const csrfError = validateCsrf(_request);
+        if (csrfError) {
+            return csrfError;
         }
 
         await syncSessionUser(auth.user);
@@ -140,6 +157,6 @@ export async function DELETE(
         return NextResponse.json({ message: `Job ${params.id} deleted` });
     } catch (error) {
         console.error(`[DELETE /api/jobs/${params.id}]`, error);
-        return NextResponse.json({ error: "Failed to delete job" }, { status: 500 });
+        return serverError("Failed to delete job");
     }
 }

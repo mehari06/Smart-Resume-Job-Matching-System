@@ -73,7 +73,7 @@ export async function syncSessionUser(user: SessionUser) {
                 email: user.email ?? existingById.email ?? undefined,
                 image: user.image ?? existingById.image ?? undefined,
                 name: user.name ?? existingById.name ?? undefined,
-                role: user.role ?? existingById.role,
+                // Role is security-sensitive and should not be implicitly overwritten during "sync".
             },
         });
     }
@@ -89,7 +89,7 @@ export async function syncSessionUser(user: SessionUser) {
                 data: {
                     image: user.image ?? existingByEmail.image ?? undefined,
                     name: user.name ?? existingByEmail.name ?? undefined,
-                    role: user.role ?? existingByEmail.role,
+                    // Do not overwrite role implicitly.
                 },
             });
         }

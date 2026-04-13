@@ -3,6 +3,9 @@ import { getAllJobs, getFilteredJobs, getJobCategories } from "../../../lib/data
 import { requireSessionUser, syncSessionUser } from "../../../lib/api-auth";
 import { parseJobSource, parseJobType, serializeJob } from "../../../lib/job-utils";
 import prisma from "../../../lib/prisma";
+import { enforceRateLimit } from "../../../lib/rate-limit";
+import { serverError, validateCsrf } from "../../../lib/security";
+import { jobCreateSchema } from "../../../lib/validation";
 import type { JobFilters } from "../../../types";
 
 export const dynamic = "force-dynamic";
@@ -65,8 +68,8 @@ export async function GET(request: NextRequest) {
             type: (searchParams.get("type") as JobFilters["type"]) ?? undefined,
         };
 
-        const page = parseInt(searchParams.get("page") ?? "1", 10);
-        const pageSize = parseInt(searchParams.get("pageSize") ?? "9", 10);
+        const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+        const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("pageSize") ?? "9", 10)));
 
         const { jobs, total, totalPages } = await getFilteredJobs(filters, page, pageSize);
         const categories = await getJobCategories();
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error("[GET /api/jobs]", error);
-        return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });
+        return serverError("Failed to fetch jobs");
     }
 }
 
@@ -92,38 +95,52 @@ export async function POST(request: NextRequest) {
             return auth.error;
         }
 
-        const body = (await request.json()) as Record<string, unknown>;
+        const csrfError = validateCsrf(request);
+        if (csrfError) {
+            return csrfError;
+        }
 
-        if (
-            typeof body.title !== "string" ||
-            typeof body.company !== "string" ||
-            typeof body.description !== "string"
-        ) {
+        const rateLimitError = enforceRateLimit(request, {
+            bucket: "job-create",
+            userId: auth.user.id,
+            limit: 20,
+            windowMs: 10 * 60 * 1000,
+            message: "Too many job creation attempts. Please wait before trying again.",
+        });
+        if (rateLimitError) {
+            return rateLimitError;
+        }
+
+        const body = (await request.json()) as Record<string, unknown>;
+        const parsed = jobCreateSchema.safeParse(body);
+
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: "title, company, and description are required" },
+                { error: "Invalid job payload" },
                 { status: 400 }
             );
         }
 
         await syncSessionUser(auth.user);
 
-        const rawDeadline = typeof body.deadline === "string" && body.deadline ? new Date(body.deadline) : null;
+        const rawDeadline =
+            typeof parsed.data.deadline === "string" && parsed.data.deadline
+                ? new Date(parsed.data.deadline)
+                : null;
         const deadline = rawDeadline && !Number.isNaN(rawDeadline.getTime()) ? rawDeadline : null;
 
         const createdJob = await prisma.job.create({
             data: {
-                title: body.title.trim(),
-                company: body.company.trim(),
-                location: typeof body.location === "string" ? body.location.trim() : "Addis Ababa, Ethiopia",
-                type: parseJobType(body.type),
-                salary: typeof body.salary === "string" && body.salary.trim() ? body.salary.trim() : null,
-                description: body.description.trim(),
-                skills: Array.isArray(body.skills)
-                    ? body.skills.filter((skill): skill is string => typeof skill === "string" && !!skill.trim())
-                    : [],
-                source: parseJobSource(body.source),
-                category: typeof body.category === "string" && body.category.trim() ? body.category.trim() : "Engineering",
-                experience: typeof body.experience === "string" && body.experience.trim() ? body.experience.trim() : "Mid-level",
+                title: parsed.data.title.trim(),
+                company: parsed.data.company.trim(),
+                location: parsed.data.location?.trim() || "Addis Ababa, Ethiopia",
+                type: parseJobType(parsed.data.type),
+                salary: typeof parsed.data.salary === "string" && parsed.data.salary.trim() ? parsed.data.salary.trim() : null,
+                description: parsed.data.description.trim(),
+                skills: parsed.data.skills ?? [],
+                source: parseJobSource(parsed.data.source),
+                category: parsed.data.category?.trim() || "Engineering",
+                experience: parsed.data.experience?.trim() || "Mid-level",
                 deadline,
                 postedById: auth.user.id,
             },
@@ -135,6 +152,6 @@ export async function POST(request: NextRequest) {
         );
     } catch (error) {
         console.error("[POST /api/jobs]", error);
-        return NextResponse.json({ error: "Failed to create job" }, { status: 500 });
+        return serverError("Failed to create job");
     }
 }

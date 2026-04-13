@@ -5,75 +5,148 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "./prisma";
 
 const usePrismaAdapter = process.env.NEXTAUTH_USE_PRISMA_ADAPTER === "true";
-const recruiterEmails = new Set(
-    (process.env.RECRUITER_EMAILS ?? "mbereket523@gmail.com")
+const allowDevCredentials =
+    process.env.NODE_ENV !== "production" &&
+    process.env.ENABLE_DEV_CREDENTIALS_AUTH === "true";
+
+// ADMIN emails — these users will always receive the ADMIN role
+const adminEmails = new Set(
+    (process.env.ADMIN_EMAILS ?? "mbereket523@gmail.com")
         .split(",")
         .map((v) => v.trim().toLowerCase())
         .filter(Boolean)
 );
 
-function inferRoleFromEmail(email?: string | null): "RECRUITER" | "SEEKER" {
+function inferRoleFromEmail(email?: string | null): "ADMIN" | "SEEKER" {
     const normalized = (email ?? "").trim().toLowerCase();
-    return recruiterEmails.has(normalized) ? "RECRUITER" : "SEEKER";
+    if (adminEmails.has(normalized)) return "ADMIN";
+    return "SEEKER";
 }
 
 export const authOptions: NextAuthOptions = {
     ...(usePrismaAdapter ? { adapter: PrismaAdapter(prisma) as any } : {}),
+    secret: process.env.NEXTAUTH_SECRET,
+    useSecureCookies: process.env.NODE_ENV === "production",
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60,
+    },
+    jwt: {
+        maxAge: 30 * 24 * 60 * 60,
     },
     pages: {
         signIn: "/login",
         error: "/login",
     },
+    cookies: {
+        sessionToken: {
+            name:
+                process.env.NODE_ENV === "production"
+                    ? "__Secure-next-auth.session-token"
+                    : "next-auth.session-token",
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
+    },
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+            allowDangerousEmailAccountLinking: true,
+            authorization: {
+                params: {
+                    prompt: "select_account",
+                    access_type: "offline",
+                    response_type: "code"
+                }
+            }
         }),
-        // Credentials provider — email/password fallback for dev
-        CredentialsProvider({
-            name: "Email",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                role: { label: "Role", type: "text" },
-            },
-            async authorize(credentials) {
-                // Dev mode: accept any email and return a mock user
-                if (!credentials?.email) return null;
-                return {
-                    id: "dev-user-001",
-                    name: credentials.email.split("@")[0],
-                    email: credentials.email,
-                    role: (credentials.role ?? "SEEKER") as string,
-                    image: null,
-                };
-            },
-        }),
+        ...(allowDevCredentials
+            ? [
+                  CredentialsProvider({
+                      name: "Email",
+                      credentials: {
+                          email: { label: "Email", type: "email" },
+                      },
+                      async authorize(credentials) {
+                          const email = credentials?.email?.trim().toLowerCase();
+                          if (!email) return null;
+
+                          return {
+                              id: "dev-user-001",
+                              name: email.split("@")[0],
+                              email,
+                              role: inferRoleFromEmail(email),
+                              image: null,
+                          };
+                      },
+                  }),
+              ]
+            : []),
     ],
     callbacks: {
-        async jwt({ token, user, account, trigger, session }) {
-            // Persist role and provider into the JWT token
-            if (user) {
-                const userRole = (user as any).role as string | undefined;
-                token.role = userRole ?? inferRoleFromEmail((user as any).email ?? token.email as string | undefined);
-                token.id = (user as any).id ?? token.sub ?? token.id;
-                token.image = (user as any).image ?? token.image;
-            }
+        async signIn({ account, profile, user }) {
             if (account?.provider === "google") {
-                if (!token.role) {
-                    token.role = inferRoleFromEmail((token.email as string | undefined) ?? (user as any)?.email);
+                const email = (user.email ?? "").trim().toLowerCase();
+                const audience = account.providerAccountId;
+                const googleProfile = profile as Record<string, unknown> | undefined;
+                const emailVerified = googleProfile?.email_verified;
+
+                if (!email || emailVerified !== true || !audience) {
+                    return false;
                 }
-                token.id = token.id ?? token.sub;
-                token.image = (token.picture as string | undefined) ?? (token.image as string | undefined);
             }
+
+            return true;
+        },
+        async jwt({ token, user, account, trigger, session }) {
+            // Initial sign in
+            if (user) {
+                token.id = (user as any).id ?? token.sub ?? token.id;
+                token.role = (user as any).role ?? inferRoleFromEmail(user.email);
+                token.email = user.email;
+            }
+
+            // authorative sync with DB for role changes (e.g. Admin approval)
+            const email = token.email as string | undefined;
+            if (email) {
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { email: email.trim().toLowerCase() },
+                        select: { id: true, role: true },
+                    });
+
+                    if (dbUser) {
+                        const inferredRole = inferRoleFromEmail(email);
+                        // Hardcoded Admin emails always get ADMIN role
+                        if (inferredRole === "ADMIN") {
+                            token.role = "ADMIN";
+                            if (dbUser.role !== "ADMIN") {
+                                await prisma.user.update({
+                                    where: { id: dbUser.id },
+                                    data: { role: "ADMIN" },
+                                }).catch(() => {});
+                            }
+                        } else {
+                            // Otherwise, use what's in the database (e.g. RECRUITER)
+                            token.role = dbUser.role;
+                        }
+                        token.id = dbUser.id;
+                    }
+                } catch (error) {
+                    // Fallback to existing token role if DB is unreachable
+                    console.error("[auth] JWT DB sync failed:", error);
+                }
+            }
+
             if (trigger === "update" && session) {
                 if (typeof (session as any).name === "string") {
-                    token.name = (session as any).name;
-                }
-                if (typeof (session as any).role === "string") {
-                    token.role = (session as any).role;
+                    token.name = (session as any).name.trim().slice(0, 120);
                 }
             }
             return token;

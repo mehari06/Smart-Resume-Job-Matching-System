@@ -1069,5 +1069,285 @@
             }
         ],
         "computedAt": "2026-03-21T06:21:47.401Z"
+    },
+    "resume-401e8071-9131-4a7f-ad4a-d111900e2250": {
+        "resumeId": "resume-401e8071-9131-4a7f-ad4a-d111900e2250",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-non-tech-101",
+                "jobTitle": "Sales Supervisor",
+                "company": "Zemen Media",
+                "similarityScore": 56.09,
+                "rank": 1,
+                "matchedSkills": [
+                    "CRM",
+                    "Reporting"
+                ],
+                "missingSkills": [
+                    "Team Management",
+                    "B2B Sales",
+                    "Negotiation"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-non-tech-151",
+                "jobTitle": "Sales Supervisor (Expert)",
+                "company": "Shega Insight",
+                "similarityScore": 55.73,
+                "rank": 2,
+                "matchedSkills": [
+                    "CRM",
+                    "Reporting"
+                ],
+                "missingSkills": [
+                    "Team Management",
+                    "B2B Sales",
+                    "Negotiation"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-034",
+                "jobTitle": "AI Product Researcher",
+                "company": "Qena",
+                "similarityScore": 54.26,
+                "rank": 3,
+                "matchedSkills": [
+                    "Python",
+                    "SQL"
+                ],
+                "missingSkills": [
+                    "TensorFlow",
+                    "PyTorch"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-non-tech-142",
+                "jobTitle": "Sales Supervisor",
+                "company": "Abyssinia Group",
+                "similarityScore": 52.8,
+                "rank": 4,
+                "matchedSkills": [
+                    "CRM",
+                    "Reporting"
+                ],
+                "missingSkills": [
+                    "Team Management",
+                    "B2B Sales",
+                    "Negotiation"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-066",
+                "jobTitle": "Full Stack Developer",
+                "company": "BESYS Technologies PLC",
+                "similarityScore": 45.78,
+                "rank": 5,
+                "matchedSkills": [],
+                "missingSkills": [
+                    "PostgreSQL",
+                    "Next.js",
+                    "TypeScript",
+                    "Tailwind CSS"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-03-29T06:58:39.382Z"
+    },
+    "resume-cd6721be-a2f9-4705-8cf7-757e9de97af0": {
+        "resumeId": "resume-cd6721be-a2f9-4705-8cf7-757e9de97af0",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-eth-086",
+                "jobTitle": "Full Stack Developer",
+                "company": "AhadooTec",
+                "similarityScore": 89.69,
+                "rank": 1,
+                "matchedSkills": [
+                    "Express.js",
+                    "MongoDB",
+                    "PostgreSQL",
+                    "TypeScript",
+                    "Next.js"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "Docker"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-066",
+                "jobTitle": "Full Stack Developer",
+                "company": "BESYS Technologies PLC",
+                "similarityScore": 83.34,
+                "rank": 2,
+                "matchedSkills": [
+                    "PostgreSQL",
+                    "Next.js",
+                    "TypeScript",
+                    "Tailwind CSS"
+                ],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-070",
+                "jobTitle": "Software Engineer",
+                "company": "HahuCloud",
+                "similarityScore": 79.16,
+                "rank": 3,
+                "matchedSkills": [
+                    "Next.js",
+                    "PostgreSQL",
+                    "TypeScript",
+                    "Node.js",
+                    "Tailwind CSS"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "Docker"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-077",
+                "jobTitle": "Fullstack Javascript Developer",
+                "company": "Eshi Express",
+                "similarityScore": 76.06,
+                "rank": 4,
+                "matchedSkills": [
+                    "TypeScript",
+                    "MongoDB",
+                    "Next.js",
+                    "Tailwind CSS",
+                    "PostgreSQL"
+                ],
+                "missingSkills": [
+                    "AWS"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-019",
+                "jobTitle": "Node.js Engineer",
+                "company": "Safaricom Ethiopia",
+                "similarityScore": 69.84,
+                "rank": 5,
+                "matchedSkills": [
+                    "PostgreSQL",
+                    "Express.js"
+                ],
+                "missingSkills": [
+                    "Redis",
+                    "Go",
+                    "FastAPI"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-04-13T09:16:07.403Z"
+    },
+    "cmnx2phu00001to57lcjglilx": {
+        "resumeId": "cmnx2phu00001to57lcjglilx",
+        "candidateName": "Mehari Bereket",
+        "matches": [
+            {
+                "jobId": "job-eth-086",
+                "jobTitle": "Full Stack Developer",
+                "company": "AhadooTec",
+                "similarityScore": 89.07,
+                "rank": 1,
+                "matchedSkills": [
+                    "Express.js",
+                    "MongoDB",
+                    "PostgreSQL",
+                    "TypeScript",
+                    "Next.js"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "Docker"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-066",
+                "jobTitle": "Full Stack Developer",
+                "company": "BESYS Technologies PLC",
+                "similarityScore": 83.4,
+                "rank": 2,
+                "matchedSkills": [
+                    "PostgreSQL",
+                    "Next.js",
+                    "TypeScript",
+                    "Tailwind CSS"
+                ],
+                "missingSkills": [],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-070",
+                "jobTitle": "Software Engineer",
+                "company": "HahuCloud",
+                "similarityScore": 78.7,
+                "rank": 3,
+                "matchedSkills": [
+                    "Next.js",
+                    "PostgreSQL",
+                    "TypeScript",
+                    "Node.js",
+                    "Tailwind CSS"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "Docker"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-076",
+                "jobTitle": "Fullstack Javascript Developer",
+                "company": "Abyssinia Bank",
+                "similarityScore": 75.81,
+                "rank": 4,
+                "matchedSkills": [
+                    "Node.js",
+                    "MongoDB",
+                    "React",
+                    "Express.js",
+                    "PostgreSQL"
+                ],
+                "missingSkills": [
+                    "AWS",
+                    "Docker"
+                ],
+                "explanation": "Semantic ML match"
+            },
+            {
+                "jobId": "job-eth-019",
+                "jobTitle": "Node.js Engineer",
+                "company": "Safaricom Ethiopia",
+                "similarityScore": 69.77000000000001,
+                "rank": 5,
+                "matchedSkills": [
+                    "PostgreSQL",
+                    "Express.js"
+                ],
+                "missingSkills": [
+                    "Redis",
+                    "Go",
+                    "FastAPI"
+                ],
+                "explanation": "Semantic ML match"
+            }
+        ],
+        "computedAt": "2026-04-13T10:53:17.090Z"
     }
 }

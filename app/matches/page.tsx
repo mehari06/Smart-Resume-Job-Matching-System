@@ -275,9 +275,18 @@ function MatchesPageContent() {
                                         <div className="min-w-[220px] space-y-3 lg:text-right">
                                             <CircularScore value={match.similarityScore} className="mx-auto lg:mx-0 lg:ml-auto" />
                                             <ProgressBar value={match.similarityScore} label="Similarity score" />
-                                            <Button variant="secondary" className="w-full" asChild>
-                                                <Link href={`/jobs/${match.jobId}`}>View Job Details</Link>
-                                            </Button>
+                                            {match.jobId ? (
+                                                <Button variant="secondary" className="w-full" asChild>
+                                                    <Link href={`/jobs/${match.jobId}`}>View Job Details</Link>
+                                                </Button>
+                                            ) : (
+                                                <Button variant="secondary" className="w-full relative opacity-70 group" disabled>
+                                                    <span>View Job Details</span>
+                                                    <div className="absolute inset-x-0 -top-10 hidden group-hover:block whitespace-nowrap bg-slate-800 text-white text-[10px] px-2 py-1 rounded">
+                                                        ML matching data out of sync
+                                                    </div>
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </Card>

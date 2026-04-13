@@ -10,6 +10,7 @@ import { Card } from "./Card";
 import { Button } from "./Button";
 import { toast } from "sonner";
 import { ErrorMessage } from "./ErrorMessage";
+import { withCsrfHeaders } from "../lib/client-security";
 
 const jobSchema = z.object({
     title: z.string().min(5, "Job title must be at least 5 characters"),
@@ -77,9 +78,11 @@ export function JobPostForm() {
         setIsLoading(true);
         try {
             const res = await fetch("/api/jobs", {
+                ...withCsrfHeaders({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
+                }),
             });
             const json = await res.json();
 
