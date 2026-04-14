@@ -3,6 +3,8 @@ import prisma from '../../../lib/prisma';
 import { Ban, CheckCircle } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = "force-dynamic";
+
 async function toggleBanAction(formData: FormData) {
   'use server';
   const userId = formData.get('userId') as string;

@@ -2,6 +2,8 @@ import React from 'react';
 import prisma from '../../../lib/prisma';
 import { Users, Briefcase, FileText, Activity } from 'lucide-react';
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const usersCount = await prisma.user.count();
   const recruitersCount = await prisma.user.count({ where: { role: 'RECRUITER' } });
