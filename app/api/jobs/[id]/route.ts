@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getJobById } from "../../../../lib/data";
-import { requireSessionUser, syncSessionUser } from "../../../../lib/api-auth";
-import { parseJobSource, parseJobType, serializeJob } from "../../../../lib/job-utils";
-import prisma from "../../../../lib/prisma";
-import { serverError, validateCsrf } from "../../../../lib/security";
-import { jobUpdateSchema } from "../../../../lib/validation";
 
 /**
  * GET /api/jobs/[id]   — Public: get single job detail
@@ -12,11 +6,21 @@ import { jobUpdateSchema } from "../../../../lib/validation";
  * DELETE /api/jobs/[id] — Recruiter: delete job (stubbed)
  */
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(
     _request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const [{ getJobById }, { serializeJob }, { serverError }, { default: prisma }] = await Promise.all([
+            import("../../../../lib/data"),
+            import("../../../../lib/job-utils"),
+            import("../../../../lib/security"),
+            import("../../../../lib/prisma"),
+        ]);
+
         try {
             const dbJob = await prisma.job.findUnique({ where: { id: params.id } });
             if (dbJob) {
@@ -33,6 +37,7 @@ export async function GET(
         return NextResponse.json({ data: job });
     } catch (error) {
         console.error(`[GET /api/jobs/${params.id}]`, error);
+        const { serverError } = await import("../../../../lib/security");
         return serverError("Failed to fetch job");
     }
 }
@@ -42,6 +47,20 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
+        const [
+            { requireSessionUser, syncSessionUser },
+            { parseJobSource, parseJobType },
+            { default: prisma },
+            { serverError, validateCsrf },
+            { jobUpdateSchema },
+        ] = await Promise.all([
+            import("../../../../lib/api-auth"),
+            import("../../../../lib/job-utils"),
+            import("../../../../lib/prisma"),
+            import("../../../../lib/security"),
+            import("../../../../lib/validation"),
+        ]);
+
         const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
         if ("error" in auth) {
             return auth.error;
@@ -115,6 +134,7 @@ export async function PUT(
         return NextResponse.json({ data: updated, message: "Job updated" });
     } catch (error) {
         console.error(`[PUT /api/jobs/${params.id}]`, error);
+        const { serverError } = await import("../../../../lib/security");
         return serverError("Failed to update job");
     }
 }
@@ -124,6 +144,16 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const [
+            { requireSessionUser, syncSessionUser },
+            { default: prisma },
+            { serverError, validateCsrf },
+        ] = await Promise.all([
+            import("../../../../lib/api-auth"),
+            import("../../../../lib/prisma"),
+            import("../../../../lib/security"),
+        ]);
+
         const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
         if ("error" in auth) {
             return auth.error;
@@ -157,6 +187,7 @@ export async function DELETE(
         return NextResponse.json({ message: `Job ${params.id} deleted` });
     } catch (error) {
         console.error(`[DELETE /api/jobs/${params.id}]`, error);
+        const { serverError } = await import("../../../../lib/security");
         return serverError("Failed to delete job");
     }
 }
