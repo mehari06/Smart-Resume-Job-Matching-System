@@ -11,6 +11,8 @@ export const metadata = {
   description: 'Administration panel for the Smart Resume Job Matching System',
 };
 
+export const dynamic = "force-dynamic";
+
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'All Users', href: '/admin/users', icon: Users },
