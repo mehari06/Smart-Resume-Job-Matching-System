@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getTrustedUnixTimestampSeconds } from "../../../../lib/cloudinary-utils";
-import { requireSessionUser } from "../../../../lib/api-auth";
-import {
-    cloudinary,
-    buildResumeUploadFolder,
-    createResumeStorageKey,
-    ensureCloudinaryConfigured,
-} from "../../../../lib/cloudinary";
-import { enforceRateLimit } from "../../../../lib/rate-limit";
-import { serverError, validateCsrf } from "../../../../lib/security";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
     try {
+        const [{ requireSessionUser }, { getTrustedUnixTimestampSeconds }, cloudinaryModule, { enforceRateLimit }, { serverError, validateCsrf }] =
+            await Promise.all([
+                import("../../../../lib/api-auth"),
+                import("../../../../lib/cloudinary-utils"),
+                import("../../../../lib/cloudinary"),
+                import("../../../../lib/rate-limit"),
+                import("../../../../lib/security"),
+            ]);
+        const {
+            cloudinary,
+            buildResumeUploadFolder,
+            createResumeStorageKey,
+            ensureCloudinaryConfigured,
+        } = cloudinaryModule;
         const auth = await requireSessionUser();
         if ("error" in auth) {
             return auth.error;
@@ -69,6 +73,7 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error("[POST /api/cloudinary/sign]", error);
+        const { serverError } = await import("../../../../lib/security");
         return serverError("Failed to sign upload request");
     }
 }

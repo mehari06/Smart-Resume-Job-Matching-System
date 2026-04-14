@@ -2,7 +2,6 @@ import type { UserRole } from "../types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
-import prisma from "./prisma";
 
 export type SessionUser = {
     id: string;
@@ -61,7 +60,26 @@ export function isOwnerOrAdmin(user: SessionUser, ownerId?: string | null) {
     return user.role === "ADMIN" || (!!ownerId && user.id === ownerId);
 }
 
+let prismaImportPromise: Promise<(typeof import("./prisma"))["default"]> | null = null;
+let hasLoggedPrismaImportFailure = false;
+
+async function getPrismaClient() {
+    try {
+        prismaImportPromise ??= import("./prisma").then((module) => module.default);
+        return await prismaImportPromise;
+    } catch (error) {
+        prismaImportPromise = null;
+        if (!hasLoggedPrismaImportFailure) {
+            hasLoggedPrismaImportFailure = true;
+            console.error("[api-auth] Failed to load Prisma client:", error);
+        }
+        throw error;
+    }
+}
+
 export async function syncSessionUser(user: SessionUser) {
+    const prisma = await getPrismaClient();
+
     const existingById = await prisma.user.findUnique({
         where: { id: user.id },
     });
