@@ -3,6 +3,8 @@ import prisma from '../../../lib/prisma';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = "force-dynamic";
+
 async function deleteJobAction(formData: FormData) {
   'use server';
   const jobId = formData.get('jobId') as string;

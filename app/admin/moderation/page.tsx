@@ -3,6 +3,8 @@ import prisma from '../../../lib/prisma';
 import { ShieldAlert, UserX } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = 'force-dynamic';
+
 async function resolveReport(formData: FormData) {
   'use server';
   const reportId = formData.get('reportId') as string;

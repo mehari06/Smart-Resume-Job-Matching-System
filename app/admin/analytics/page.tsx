@@ -2,6 +2,8 @@ import React from 'react';
 import prisma from '../../../lib/prisma';
 import AnalyticsCharts from './AnalyticsCharts';
 
+export const dynamic = "force-dynamic";
+
 export default async function AnalyticsPage() {
   const users = await prisma.user.findMany({ select: { createdAt: true, role: true } });
   const jobs = await prisma.job.findMany({ select: { postedAt: true } });

@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
+
+export const dynamic = "force-dynamic";
+
 import { getJobById } from "../../../lib/data";
 import { Navbar } from "../../../components/Navbar";
 import { Card } from "../../../components/Card";
