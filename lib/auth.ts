@@ -2,12 +2,54 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "./prisma";
 
 const usePrismaAdapter = process.env.NEXTAUTH_USE_PRISMA_ADAPTER === "true";
 const allowDevCredentials =
     process.env.NODE_ENV !== "production" &&
     process.env.ENABLE_DEV_CREDENTIALS_AUTH === "true";
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+const hasGoogleOAuthConfig = Boolean(googleClientId && googleClientSecret);
+
+let prismaImportPromise: Promise<(typeof import("./prisma"))["default"]> | null = null;
+let hasLoggedPrismaImportFailure = false;
+
+function hasDatabaseUrl() {
+    return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+async function getPrismaClient() {
+    if (!hasDatabaseUrl()) {
+        return null;
+    }
+
+    try {
+        prismaImportPromise ??= import("./prisma").then((module) => module.default);
+        return await prismaImportPromise;
+    } catch (error) {
+        prismaImportPromise = null;
+        if (!hasLoggedPrismaImportFailure) {
+            hasLoggedPrismaImportFailure = true;
+            console.error("[auth] Failed to load Prisma client:", error);
+        }
+        return null;
+    }
+}
+
+function getPrismaAdapter() {
+    if (!usePrismaAdapter || !hasDatabaseUrl()) {
+        return undefined;
+    }
+
+    try {
+        // Delay Prisma initialization until auth config is actually used.
+        const prisma = require("./prisma").default as (typeof import("./prisma"))["default"];
+        return PrismaAdapter(prisma) as any;
+    } catch (error) {
+        console.error("[auth] Prisma adapter disabled because Prisma could not initialize:", error);
+        return undefined;
+    }
+}
 
 // ADMIN emails — these users will always receive the ADMIN role
 const adminEmails = new Set(
@@ -23,8 +65,50 @@ function inferRoleFromEmail(email?: string | null): "ADMIN" | "SEEKER" {
     return "SEEKER";
 }
 
+const adapter = getPrismaAdapter();
+const providers = [
+    ...(hasGoogleOAuthConfig
+        ? [
+              GoogleProvider({
+                  clientId: googleClientId!,
+                  clientSecret: googleClientSecret!,
+                  allowDangerousEmailAccountLinking: true,
+                  authorization: {
+                      params: {
+                          prompt: "select_account",
+                          access_type: "offline",
+                          response_type: "code",
+                      },
+                  },
+              }),
+          ]
+        : []),
+    ...(allowDevCredentials
+        ? [
+              CredentialsProvider({
+                  name: "Email",
+                  credentials: {
+                      email: { label: "Email", type: "email" },
+                  },
+                  async authorize(credentials) {
+                      const email = credentials?.email?.trim().toLowerCase();
+                      if (!email) return null;
+
+                      return {
+                          id: "dev-user-001",
+                          name: email.split("@")[0],
+                          email,
+                          role: inferRoleFromEmail(email),
+                          image: null,
+                      };
+                  },
+              }),
+          ]
+        : []),
+];
+
 export const authOptions: NextAuthOptions = {
-    ...(usePrismaAdapter ? { adapter: PrismaAdapter(prisma) as any } : {}),
+    ...(adapter ? { adapter } : {}),
     secret: process.env.NEXTAUTH_SECRET,
     useSecureCookies: process.env.NODE_ENV === "production",
     session: {
@@ -53,42 +137,7 @@ export const authOptions: NextAuthOptions = {
             },
         },
     },
-    providers: [
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-            allowDangerousEmailAccountLinking: true,
-            authorization: {
-                params: {
-                    prompt: "select_account",
-                    access_type: "offline",
-                    response_type: "code"
-                }
-            }
-        }),
-        ...(allowDevCredentials
-            ? [
-                  CredentialsProvider({
-                      name: "Email",
-                      credentials: {
-                          email: { label: "Email", type: "email" },
-                      },
-                      async authorize(credentials) {
-                          const email = credentials?.email?.trim().toLowerCase();
-                          if (!email) return null;
-
-                          return {
-                              id: "dev-user-001",
-                              name: email.split("@")[0],
-                              email,
-                              role: inferRoleFromEmail(email),
-                              image: null,
-                          };
-                      },
-                  }),
-              ]
-            : []),
-    ],
+    providers,
     callbacks: {
         async signIn({ account, profile, user }) {
             if (account?.provider === "google") {
@@ -116,6 +165,11 @@ export const authOptions: NextAuthOptions = {
             const email = token.email as string | undefined;
             if (email) {
                 try {
+                    const prisma = await getPrismaClient();
+                    if (!prisma) {
+                        return token;
+                    }
+
                     const dbUser = await prisma.user.findUnique({
                         where: { email: email.trim().toLowerCase() },
                         select: { id: true, role: true },

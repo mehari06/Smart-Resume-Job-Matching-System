@@ -35,16 +35,24 @@ try {
   // Sentry package is optional until installed.
 }
 
-module.exports = withSentryConfig(
-  nextConfig,
-  {
-    silent: true,
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-    authToken: process.env.SENTRY_AUTH_TOKEN,
-  },
-  {
-    disableLogger: true,
-    hideSourceMaps: true,
-  }
+const hasSentryBuildCredentials = Boolean(
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT
 );
+
+module.exports = hasSentryBuildCredentials
+  ? withSentryConfig(
+      nextConfig,
+      {
+        silent: true,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      },
+      {
+        disableLogger: true,
+        hideSourceMaps: true,
+      }
+    )
+  : nextConfig;
