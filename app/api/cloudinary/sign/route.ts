@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTrustedUnixTimestampSeconds } from "../../../../lib/cloudinary-utils";
 import { requireSessionUser } from "../../../../lib/api-auth";
-import { cloudinary, buildResumeUploadFolder, createResumeStorageKey } from "../../../../lib/cloudinary";
+import {
+    cloudinary,
+    buildResumeUploadFolder,
+    createResumeStorageKey,
+    ensureCloudinaryConfigured,
+} from "../../../../lib/cloudinary";
 import { enforceRateLimit } from "../../../../lib/rate-limit";
 import { serverError, validateCsrf } from "../../../../lib/security";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,6 +40,12 @@ export async function POST(request: NextRequest) {
         const folder = buildResumeUploadFolder(auth.user.id);
         const publicId = createResumeStorageKey();
         const uploadType = "authenticated";
+        const cloudinaryConfig = ensureCloudinaryConfigured();
+
+        if (!cloudinaryConfig) {
+            return serverError("Cloudinary upload is not configured");
+        }
+
         const paramsToSign = {
             timestamp,
             folder,
@@ -41,14 +55,14 @@ export async function POST(request: NextRequest) {
 
         const signature = cloudinary.utils.api_sign_request(
             paramsToSign,
-            process.env.CLOUDINARY_API_SECRET!
+            cloudinaryConfig.apiSecret
         );
 
         return NextResponse.json({
             signature,
             timestamp,
-            cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-            apiKey: process.env.CLOUDINARY_API_KEY,
+            cloudName: cloudinaryConfig.cloudName,
+            apiKey: cloudinaryConfig.apiKey,
             folder,
             publicId,
             uploadType,

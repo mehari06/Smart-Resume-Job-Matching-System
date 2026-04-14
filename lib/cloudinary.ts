@@ -1,11 +1,43 @@
 import crypto from "node:crypto";
 import { v2 as cloudinary } from "cloudinary";
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+let hasConfiguredCloudinary = false;
+
+function readCloudinaryConfig() {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+    const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+    const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+
+    if (!cloudName || !apiKey || !apiSecret) {
+        return null;
+    }
+
+    return {
+        cloudName,
+        apiKey,
+        apiSecret,
+    };
+}
+
+export function ensureCloudinaryConfigured() {
+    const config = readCloudinaryConfig();
+    if (!config) {
+        return null;
+    }
+
+    if (!hasConfiguredCloudinary) {
+        cloudinary.config({
+            cloud_name: config.cloudName,
+            api_key: config.apiKey,
+            api_secret: config.apiSecret,
+        });
+        hasConfiguredCloudinary = true;
+    }
+
+    return config;
+}
+
+ensureCloudinaryConfigured();
 
 export { cloudinary };
 
@@ -23,6 +55,10 @@ export function isOwnedResumePublicId(publicId: string, userId: string) {
 
 export function getSignedResumeAssetUrl(filePublicId?: string | null, fallbackUrl?: string | null) {
     if (!filePublicId) {
+        return fallbackUrl ?? "";
+    }
+
+    if (!ensureCloudinaryConfigured()) {
         return fallbackUrl ?? "";
     }
 
