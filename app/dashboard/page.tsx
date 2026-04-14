@@ -263,7 +263,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="w-full relative"
                       onClick={handleRequestRecruiter}

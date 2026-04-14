@@ -1,11 +1,11 @@
 # Smart Resume Job Matching System
 
 AI-powered resume-to-job matching platform with end-to-end workflow:
-- Candidate uploads resume
-- Resume text is parsed and normalized
-- ML service computes semantic similarity against job embeddings
-- Ranked matches are persisted and visualized
-- Recruiters can post jobs and review candidate fit
+- **Strict ML Scoring:** Uses a FastAPI service on Render for semantic alignment.
+- **Hybrid Ranking:** Scalable Next.js heuristic ranking for keyword/domain affinity.
+- **Full Database Sync:** Exclusively database-backed for real job opportunities.
+- **Role-Based Access:** Dedicated Seeker, Recruiter, and Admin dashboards.
+- **Security First:** NextAuth (authenticated via OpenSSL secrets) and CSRF protection.
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -14,13 +14,12 @@ AI-powered resume-to-job matching platform with end-to-end workflow:
 4. [Repository Structure](#repository-structure)
 5. [Environment Variables](#environment-variables)
 6. [Local Setup](#local-setup)
-7. [Runbook](#runbook)
+7. [Deployment Guide](#deployment-guide)
 8. [API Overview](#api-overview)
 9. [Testing](#testing)
-10. [Deployment](#deployment)
-11. [Troubleshooting](#troubleshooting)
-12. [Security Notes](#security-notes)
-13. [Contribution Workflow](#contribution-workflow)
+10. [Troubleshooting](#troubleshooting)
+11. [Security Notes](#security-notes)
+
 
 ## Project Overview
 This project combines a modern Next.js application with a Python ML scoring service to match resumes to relevant jobs using semantic embeddings and cosine similarity.

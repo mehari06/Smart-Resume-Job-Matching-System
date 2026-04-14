@@ -10,6 +10,18 @@ import path from "node:path";
 import type { Job, Resume, MatchResult, JobFilters } from "../types";
 import prisma from "./prisma";
 
+// --- Timeout utilities (used by API routes for safe DB queries) ---
+export const DB_TIMEOUT = 8000; // 8 seconds
+
+export function withTimeout<T>(promise: Promise<T>, ms: number, label = "query"): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`DB_TIMEOUT: ${label} exceeded ${ms}ms`)), ms)
+        ),
+    ]);
+}
+
 function cache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => TResult) {
     if (process.env.NODE_ENV !== "production") {
         return fn;

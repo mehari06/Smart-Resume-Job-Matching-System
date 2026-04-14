@@ -124,7 +124,7 @@ export function buildRankedMatches(options: BuildOptions): RankedMatch[] {
                 ),
                 missingSkills: computeMissingSkills(job?.skills ?? [], resumeSkills),
                 explanation: "Pure ML Algorithm Match",
-            } as RankedMatch;
+            } as RankedMatch & { _rankingScore: number };
         })
         .sort((a, b) => b._rankingScore - a._rankingScore)
         .map(item => {
