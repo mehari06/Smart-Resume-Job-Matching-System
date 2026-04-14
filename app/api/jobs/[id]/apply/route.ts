@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSessionUser } from "../../../../../lib/api-auth";
-import { enforceRateLimit } from "../../../../../lib/rate-limit";
-import { serverError, validateCsrf } from "../../../../../lib/security";
-import { applyJobSchema } from "../../../../../lib/validation";
-import { readJsonBody } from "../../../../../lib/server/request-json";
-import { applyToJob } from "../../../../../lib/services/job-apply-service";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const [
+      { requireSessionUser },
+      { enforceRateLimit },
+      { serverError, validateCsrf },
+      { applyJobSchema },
+      { readJsonBody },
+      { applyToJob },
+    ] = await Promise.all([
+      import("../../../../../lib/api-auth"),
+      import("../../../../../lib/rate-limit"),
+      import("../../../../../lib/security"),
+      import("../../../../../lib/validation"),
+      import("../../../../../lib/server/request-json"),
+      import("../../../../../lib/services/job-apply-service"),
+    ]);
+
     const auth = await requireSessionUser();
     if ("error" in auth) {
       return auth.error;
@@ -60,6 +71,7 @@ export async function POST(
     });
   } catch (error: any) {
     console.error("[POST /api/jobs/[id]/apply] Fatal Error:", error);
+    const { serverError } = await import("../../../../../lib/security");
     return serverError("Failed to submit application");
   }
 }
