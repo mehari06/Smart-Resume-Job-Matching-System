@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSessionUser } from "../../../../lib/api-auth";
-import prisma from "../../../../lib/prisma";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
     try {
+        const [{ requireSessionUser }, { default: prisma }] = await Promise.all([
+            import("../../../../lib/api-auth"),
+            import("../../../../lib/prisma"),
+        ]);
+
         const auth = await requireSessionUser();
         if ("error" in auth) return auth.error;
 
@@ -33,6 +39,11 @@ export async function POST(request: NextRequest) {
 // GET: Returns the current approval status for the logged-in user
 export async function GET(request: NextRequest) {
     try {
+        const [{ requireSessionUser }, { default: prisma }] = await Promise.all([
+            import("../../../../lib/api-auth"),
+            import("../../../../lib/prisma"),
+        ]);
+
         const auth = await requireSessionUser();
         if ("error" in auth) return auth.error;
 
