@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { requireSessionUser } from "../../../../../../lib/api-auth";
+import { requireSessionUser, syncSessionUser } from "../../../../../../lib/api-auth";
 import prisma from "../../../../../../lib/prisma";
 import { getAccountProfile } from "../../../../../../lib/user-profile-store";
 import { getSignedResumeAssetUrl } from "../../../../../../lib/cloudinary";
@@ -16,6 +16,22 @@ export async function GET(
         const auth = await requireSessionUser(["RECRUITER", "ADMIN"]);
         if ("error" in auth) {
             return auth.error;
+        }
+
+        let resolvedUser = auth.user;
+        try {
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
+        } catch (error) {
+            console.error("[GET /api/recruiter/jobs/[id]/candidates] syncSessionUser failed (continuing)", error);
         }
 
         let job:
@@ -33,7 +49,7 @@ export async function GET(
                 return NextResponse.json({ error: "Job not found" }, { status: 404 });
             }
 
-            if (auth.user.role !== "ADMIN" && job.postedById !== auth.user.id) {
+            if (resolvedUser.role !== "ADMIN" && job.postedById !== resolvedUser.id) {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
             }
 
@@ -79,7 +95,7 @@ export async function GET(
                 return NextResponse.json({ error: "Job not found" }, { status: 404 });
             }
 
-            if (auth.user.role !== "ADMIN" && foundJob.postedById !== auth.user.id) {
+            if (resolvedUser.role !== "ADMIN" && foundJob.postedById !== resolvedUser.id) {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
             }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { requireSessionUser } from "../../../../lib/api-auth";
+import { requireSessionUser, syncSessionUser } from "../../../../lib/api-auth";
 import prisma from "../../../../lib/prisma";
 import { getAccountProfile } from "../../../../lib/user-profile-store";
 import { withTimeout, DB_TIMEOUT } from "../../../../lib/data";
@@ -16,13 +16,29 @@ export async function GET(request: NextRequest) {
             return auth.error;
         }
 
+        let resolvedUser = auth.user;
+        try {
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
+        } catch (error) {
+            console.error("[GET /api/recruiter/applicants] syncSessionUser failed (continuing)", error);
+        }
+
         let allApplicants: any[] = [];
         let usedPrisma = true;
 
         try {
             const ownedJobs = await withTimeout(
                 prisma.job.findMany({
-                    where: auth.user.role === "ADMIN" ? {} : { postedById: auth.user.id },
+                    where: resolvedUser.role === "ADMIN" ? {} : { postedById: resolvedUser.id },
                     select: { id: true, title: true, company: true, category: true }
                 }),
                 DB_TIMEOUT,
@@ -143,7 +159,7 @@ export async function GET(request: NextRequest) {
             const matchesMap = JSON.parse(matchesRaw) as Record<string, any>;
             const visibleJobIds = new Set(
                 jobsList
-                    .filter((job) => auth.user.role === "ADMIN" || job.postedById === auth.user.id)
+                    .filter((job) => resolvedUser.role === "ADMIN" || job.postedById === resolvedUser.id)
                     .map((job) => job.id)
             );
 
