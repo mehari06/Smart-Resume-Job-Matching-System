@@ -34,6 +34,10 @@ type UploadResult = {
     response: NextResponse;
 };
 
+function canUseJsonFallback() {
+    return process.env.NODE_ENV !== "production" && process.env.VERCEL !== "1";
+}
+
 function safeParseStringArray(value: FormDataEntryValue | null) {
     if (typeof value !== "string" || !value.trim()) return undefined;
 
@@ -403,6 +407,14 @@ export async function createResumeFromUpload(params: {
         };
     } catch (error) {
         console.error("[resume-upload] Prisma write failed, falling back to JSON store", error);
+        if (!canUseJsonFallback()) {
+            return {
+                response: NextResponse.json(
+                    { error: "Failed to save resume to database" },
+                    { status: 503 }
+                ),
+            };
+        }
     }
 
     const jsonResume = await saveResumeJsonFallback({
