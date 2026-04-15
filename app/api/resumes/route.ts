@@ -26,12 +26,28 @@ export async function GET(request: NextRequest) {
         const auth = await requireSessionUser();
         if ("error" in auth) return auth.error;
 
+        let resolvedUser = auth.user;
+        try {
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
+        } catch (error) {
+            console.error("[GET /api/resumes] syncSessionUser failed (continuing)", error);
+        }
+
         const { searchParams } = new URL(request.url);
         const requestedUserId = searchParams.get("userId");
-        const isAdmin = auth.user.role === "ADMIN";
+        const isAdmin = resolvedUser.role === "ADMIN";
 
         const resumes = await getAllResumes();
-        const targetUserId = isAdmin && requestedUserId ? requestedUserId : auth.user.id;
+        const targetUserId = isAdmin && requestedUserId ? requestedUserId : resolvedUser.id;
 
         const visibleResumes =
             isAdmin && !requestedUserId
