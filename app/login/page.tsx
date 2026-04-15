@@ -20,20 +20,28 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [role, setRole] = useState<"SEEKER" | "RECRUITER">("SEEKER");
 
-  const callbackUrl = role === "RECRUITER" ? "/recruiter" : "/dashboard";
+  const requestedCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = requestedCallbackUrl ?? `/auth/complete?intent=${role}`;
   const error = searchParams.get("error");
 
   useEffect(() => {
     // If we were redirected here due to a role mismatch, keep the user on this page
     // so they can choose a different account.
     if (status === "authenticated" && !error) {
-      router.replace("/dashboard");
+      const sessionRole = (session?.user as any)?.role;
+      if (sessionRole === "ADMIN") {
+        router.replace("/admin/dashboard");
+      } else if (sessionRole === "RECRUITER") {
+        router.replace("/recruiter");
+      } else {
+        router.replace("/dashboard");
+      }
     }
-  }, [status, router, error]);
+  }, [status, router, error, session]);
 
   const handleGoogle = () => {
     startTransition(() => {

@@ -11,6 +11,7 @@ import { resumePatchSchema } from "../../../../lib/validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+const SHOULD_USE_JSON_FALLBACK = process.env.NODE_ENV !== "production" && !process.env.VERCEL;
 
 async function loadResumesJson(): Promise<any[]> {
     const resumesPath = path.join(process.cwd(), "data", "resumes.json");
@@ -22,6 +23,24 @@ async function loadResumesJson(): Promise<any[]> {
 async function saveResumesJson(resumes: any[]) {
     const resumesPath = path.join(process.cwd(), "data", "resumes.json");
     await fs.writeFile(resumesPath, JSON.stringify(resumes, null, 4), "utf8");
+}
+
+async function destroyResumeAsset(filePublicId: string) {
+    try {
+        const timestamp = await getTrustedUnixTimestampSeconds();
+        await Promise.race([
+            (cloudinary.uploader as any).destroy(filePublicId, {
+                resource_type: "raw",
+                type: "authenticated",
+                timestamp,
+            }),
+            new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Cloudinary delete timed out")), 3500);
+            }),
+        ]);
+    } catch (error) {
+        console.warn("[resume-delete] Cloudinary destroy failed", error);
+    }
 }
 
 function normalizeSkills(input: unknown): string[] {
@@ -94,6 +113,10 @@ export async function PATCH(
             console.warn("[PATCH /api/resumes/[id]] Prisma failed, falling back to JSON", e);
         }
 
+        if (!SHOULD_USE_JSON_FALLBACK) {
+            return NextResponse.json({ error: "Resume store unavailable" }, { status: 503 });
+        }
+
         const resumes = await loadResumesJson();
         const idx = resumes.findIndex((r) => r?.id === params.id);
         if (idx === -1) {
@@ -163,20 +186,6 @@ export async function DELETE(
                     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
                 }
 
-                if (resume.filePublicId) {
-                    try {
-                        const timestamp = await getTrustedUnixTimestampSeconds();
-                        await (cloudinary.uploader as any).destroy(resume.filePublicId, {
-                            resource_type: "raw",
-                            type: "authenticated",
-                            timestamp
-                        });
-                    } catch (err) {
-                        // Cloudinary delete failures shouldn't block the DB delete (e.g. timestamp drift / already removed).
-                        console.warn(`[DELETE /api/resumes/${params.id}] Cloudinary destroy failed`, err);
-                    }
-                }
-
                 try {
                     await prisma.resume.delete({
                         where: { id: params.id },
@@ -188,10 +197,18 @@ export async function DELETE(
                     }
                 }
 
+                if (resume.filePublicId) {
+                    void destroyResumeAsset(resume.filePublicId);
+                }
+
                 return NextResponse.json({ message: "Resume deleted successfully" });
             }
         } catch (e) {
             console.warn("[DELETE /api/resumes/[id]] Prisma failed, falling back to JSON", e);
+        }
+
+        if (!SHOULD_USE_JSON_FALLBACK) {
+            return NextResponse.json({ error: "Resume delete failed" }, { status: 503 });
         }
 
         const resumes = await loadResumesJson();
@@ -205,16 +222,7 @@ export async function DELETE(
         }
 
         if (resume.filePublicId) {
-            try {
-                const timestamp = await getTrustedUnixTimestampSeconds();
-                await (cloudinary.uploader as any).destroy(resume.filePublicId, {
-                    resource_type: "raw",
-                    type: "authenticated",
-                    timestamp
-                });
-            } catch (e) {
-                console.warn("[DELETE /api/resumes/[id]] Cloudinary destroy (JSON fallback) failed", e);
-            }
+            void destroyResumeAsset(resume.filePublicId);
         }
 
         resumes.splice(idx, 1);

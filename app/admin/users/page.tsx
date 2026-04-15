@@ -2,21 +2,9 @@ import React from 'react';
 import prisma from '../../../lib/prisma';
 import { Ban, CheckCircle } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
+import { AdminUserBanButton } from '../../../components/admin/AdminUserBanButton';
 
 export const dynamic = "force-dynamic";
-
-async function toggleBanAction(formData: FormData) {
-  'use server';
-  const userId = formData.get('userId') as string;
-  const currentlyBanned = formData.get('isBanned') === 'true';
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { banned: !currentlyBanned }
-  });
-
-  revalidatePath('/admin/users');
-}
 
 async function handleRecruiterRequest(formData: FormData) {
   'use server';
@@ -149,14 +137,11 @@ export default async function UsersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <form action={toggleBanAction}>
-                      <input type="hidden" name="userId" value={user.id} />
-                      <input type="hidden" name="isBanned" value={user.banned ? 'true' : 'false'} />
-                      <button type="submit" className={`flex items-center px-3 py-1 rounded text-white ${user.banned ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                        {user.banned ? <CheckCircle className="w-4 h-4 mr-1" /> : <Ban className="w-4 h-4 mr-1" />}
-                        {user.banned ? 'Unban' : 'Ban'}
-                      </button>
-                    </form>
+                    <AdminUserBanButton
+                      userId={user.id}
+                      userName={user.name || user.email || 'this user'}
+                      banned={user.banned}
+                    />
                   </td>
                 </tr>
               ))}

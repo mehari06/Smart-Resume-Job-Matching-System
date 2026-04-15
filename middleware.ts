@@ -102,8 +102,8 @@ export async function middleware(request: NextRequest) {
         return applySecurityHeaders(response);
     }
 
-    if (hasPrefix(pathname, SEEKER_ONLY_PATHS) && role === "RECRUITER") {
-        const response = NextResponse.redirect(new URL("/recruiter", request.url));
+    if (pathname === "/dashboard" && role === "ADMIN") {
+        const response = NextResponse.redirect(new URL("/admin/dashboard", request.url));
         ensureCsrfCookie(request, response);
         return applySecurityHeaders(response);
     }

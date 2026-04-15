@@ -34,6 +34,11 @@ export default function DashboardPage() {
 
   // Fetch the real-time approval status from the DB
   useEffect(() => {
+    if (status === "authenticated" && user?.role === "ADMIN") {
+      router.replace("/admin/dashboard");
+      return;
+    }
+
     if (status === "authenticated" && user?.id) {
       fetch("/api/recruiter/request-access")
         .then(res => res.json())
@@ -42,7 +47,7 @@ export default function DashboardPage() {
         })
         .catch(() => {});
     }
-  }, [status, user?.id]);
+  }, [router, status, user?.id, user?.role]);
 
   const handleAnalyze = () => {
     if (!activeResumeId) return;

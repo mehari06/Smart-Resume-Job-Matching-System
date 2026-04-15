@@ -23,6 +23,8 @@ export function Navbar() {
   const user = session?.user as any;
   const isRecruiter = user?.role === "RECRUITER" || user?.role === "recruiter";
   const isAdmin = user?.role === "ADMIN";
+  const dashboardHref = isAdmin ? "/admin/dashboard" : "/dashboard";
+  const roleLabel = isAdmin ? "Admin" : isRecruiter ? "Recruiter" : "Job Seeker";
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "SR";
@@ -91,13 +93,13 @@ export function Navbar() {
                     <p className="text-xs font-medium text-slate-900">{user?.name}</p>
                     <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                     <span className="mt-1 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                      {isRecruiter ? "Recruiter" : "Job Seeker"}
+                      {roleLabel}
                     </span>
                   </div>
 
                   <DropdownMenu.Item asChild>
                     <Link
-                      href="/dashboard"
+                      href={dashboardHref}
                       className="flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none hover:bg-slate-50 focus:bg-slate-50"
                     >
                       <LayoutDashboard className="h-4 w-4 text-slate-400" />

@@ -1,7 +1,6 @@
 "use client";
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { Trash2 } from "lucide-react";
 import React from "react";
 import { Button } from "./Button";
 
@@ -10,9 +9,10 @@ interface ConfirmDialogProps {
     description: string;
     onConfirm: () => void;
     triggerElement: React.ReactNode;
+    confirmLabel?: string;
 }
 
-export function ConfirmDialog({ title, description, onConfirm, triggerElement }: ConfirmDialogProps) {
+export function ConfirmDialog({ title, description, onConfirm, triggerElement, confirmLabel = "Delete" }: ConfirmDialogProps) {
     return (
         <AlertDialog.Root>
             <AlertDialog.Trigger asChild>
@@ -33,7 +33,7 @@ export function ConfirmDialog({ title, description, onConfirm, triggerElement }:
                         </AlertDialog.Cancel>
                         <AlertDialog.Action asChild>
                             <Button onClick={(e) => { e.preventDefault(); onConfirm(); }} className="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                                <Trash2 className="h-4 w-4 mr-1.5" /> Delete
+                                {confirmLabel}
                             </Button>
                         </AlertDialog.Action>
                     </div>

@@ -1,20 +1,9 @@
 import React from 'react';
 import prisma from '../../../lib/prisma';
-import { Trash2, AlertTriangle } from 'lucide-react';
-import { revalidatePath } from 'next/cache';
+import { AlertTriangle } from 'lucide-react';
+import { AdminJobDeleteButton } from '../../../components/admin/AdminJobDeleteButton';
 
 export const dynamic = "force-dynamic";
-
-async function deleteJobAction(formData: FormData) {
-  'use server';
-  const jobId = formData.get('jobId') as string;
-
-  await prisma.job.delete({
-    where: { id: jobId }
-  });
-
-  revalidatePath('/admin/jobs');
-}
 
 export default async function JobsPage() {
   const jobs = await prisma.job.findMany({
@@ -62,13 +51,7 @@ export default async function JobsPage() {
                     <AlertTriangle className="w-4 h-4 mr-1" />
                     Flag
                   </button>
-                  <form action={deleteJobAction}>
-                    <input type="hidden" name="jobId" value={job.id} />
-                    <button type="submit" className="flex items-center px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700">
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </button>
-                  </form>
+                  <AdminJobDeleteButton jobId={job.id} jobTitle={job.title} />
                 </td>
               </tr>
             ))}

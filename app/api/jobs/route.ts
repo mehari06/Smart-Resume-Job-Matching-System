@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
                 include: {
                     _count: {
                         select: {
-                            matches: true,
+                            applications: true,
                         },
                     },
                 },
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
             const ownJobsWithApplicants = ownJobs.map((job) => ({
                 ...serializeJob(job),
-                applicants: job._count.matches,
+                applicants: job._count.applications,
             }));
 
             return NextResponse.json({

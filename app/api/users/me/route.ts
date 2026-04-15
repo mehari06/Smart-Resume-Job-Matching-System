@@ -20,7 +20,7 @@ export async function GET() {
         }
 
         const user = await syncSessionUser(auth.user);
-        const profile = await getAccountProfile(auth.user.id);
+        const profile = await getAccountProfile(user.id);
 
         return NextResponse.json({
             data: {
@@ -53,14 +53,14 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: "Invalid profile payload" }, { status: 400 });
         }
 
-        await syncSessionUser(auth.user);
+        const syncedUser = await syncSessionUser(auth.user);
 
         const updated = await prisma.user.update({
-            where: { id: auth.user.id },
+            where: { id: syncedUser.id },
             data: { name: parsed.data.name },
         });
 
-        const profile = await upsertAccountProfile(auth.user.id, {
+        const profile = await upsertAccountProfile(syncedUser.id, {
             firstName: parsed.data.firstName,
             lastName: parsed.data.lastName,
             city: parsed.data.city,

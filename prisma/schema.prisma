@@ -57,6 +57,13 @@ model User {
   emailVerified DateTime?
   image         String?
   role          String    @default("SEEKER")
+  firstName     String?
+  lastName      String?
+  city          String?
+  age           Int?
+  education     String?
+  fieldOfStudy  String?
+  isStudent     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   banned        Boolean   @default(false)
@@ -194,6 +201,7 @@ model Application {
   applicantName String
   email         String
   resumeURL     String // Uploaded file URL or external link
+  status        String   @default("APPLIED") // APPLIED, REVIEWED, SHORTLISTED, REJECTED, HIRED
   createdAt     DateTime @default(now())
 
   // Relations
