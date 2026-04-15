@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSessionUser } from "../../../../../lib/api-auth";
+import { requireSessionUser, syncSessionUser } from "../../../../../lib/api-auth";
 import prisma from "../../../../../lib/prisma";
 import { getSignedResumeAssetUrl } from "../../../../../lib/cloudinary";
 
@@ -94,6 +94,22 @@ export async function GET(request: NextRequest) {
             return auth.error;
         }
 
+        let resolvedUser = auth.user;
+        try {
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
+        } catch (error) {
+            console.error("[GET /api/recruiter/applicants/resume] syncSessionUser failed (continuing)", error);
+        }
+
         const { searchParams } = new URL(request.url);
         const kind = searchParams.get("kind");
         const id = searchParams.get("id");
@@ -105,8 +121,8 @@ export async function GET(request: NextRequest) {
 
         const resolved =
             kind === "application"
-                ? await getApplicationResume({ id, requester: auth.user })
-                : await getMatchedResume({ id, requester: auth.user });
+                ? await getApplicationResume({ id, requester: resolvedUser })
+                : await getMatchedResume({ id, requester: resolvedUser });
 
         if ("error" in resolved) {
             return resolved.error;
