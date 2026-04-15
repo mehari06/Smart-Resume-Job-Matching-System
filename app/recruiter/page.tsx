@@ -343,6 +343,35 @@ export default function RecruiterPage() {
                   </div>
                 ))}
               </div>
+
+              {!isLoadingJobs && jobs.length > JOBS_PER_PAGE && (
+                <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                  <p className="text-xs text-slate-500">
+                    Showing {(jobsPage - 1) * JOBS_PER_PAGE + 1}-{Math.min(jobsPage * JOBS_PER_PAGE, jobs.length)} of {jobs.length} jobs
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setJobsPage((page) => Math.max(1, page - 1))}
+                      disabled={jobsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs font-medium text-slate-600">
+                      Page {jobsPage} of {totalJobsPages}
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setJobsPage((page) => Math.min(totalJobsPages, page + 1))}
+                      disabled={jobsPage === totalJobsPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
 
             {selectedJobForCandidates && (
