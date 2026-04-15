@@ -68,8 +68,18 @@ export async function POST(request: NextRequest) {
         });
         if (rateLimitError) return rateLimitError;
 
+        let resolvedUser = auth.user;
         try {
-            await syncSessionUser(auth.user);
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
         } catch (error) {
             // Keep upload flow resilient even if Prisma user sync fails.
             console.error("[POST /api/resumes] syncSessionUser failed (continuing)", error);
@@ -77,7 +87,7 @@ export async function POST(request: NextRequest) {
 
         const result = await createResumeFromUpload({
             request,
-            user: auth.user,
+            user: resolvedUser,
         });
 
         return result.response;
