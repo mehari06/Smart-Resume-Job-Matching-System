@@ -34,6 +34,12 @@ type UploadResult = {
     response: NextResponse;
 };
 
+type ResumeOwner = {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+};
+
 function canUseJsonFallback() {
     return process.env.NODE_ENV !== "production" && process.env.VERCEL !== "1";
 }
@@ -351,6 +357,38 @@ async function saveResumeJsonFallback(params: {
     return jsonResume;
 }
 
+async function ensureResumeOwnerUser(user: ResumeOwner): Promise<ResumeOwner> {
+    const normalizedEmail = user.email?.trim().toLowerCase();
+
+    const existingById = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { id: true, name: true, email: true },
+    });
+    if (existingById) {
+        return existingById;
+    }
+
+    if (normalizedEmail) {
+        const existingByEmail = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+            select: { id: true, name: true, email: true },
+        });
+
+        if (existingByEmail) {
+            return existingByEmail;
+        }
+    }
+
+    return prisma.user.create({
+        data: {
+            id: user.id,
+            name: user.name ?? "User",
+            email: normalizedEmail,
+        },
+        select: { id: true, name: true, email: true },
+    });
+}
+
 export async function createResumeFromUpload(params: {
     request: NextRequest;
     user: { id: string; name?: string | null; email?: string | null };
@@ -367,6 +405,7 @@ export async function createResumeFromUpload(params: {
 
     const { form, fileBuffer } = validation.data;
     const existingSkills = Array.isArray(form.skills) ? form.skills : [];
+    let resumeOwner = params.user;
 
     const extracted = await maybeExtractSkills({
         fileName: form.fileName,
@@ -379,9 +418,11 @@ export async function createResumeFromUpload(params: {
     const finalSkills = extracted.skills.length > 0 ? extracted.skills : existingSkills;
 
     try {
+        resumeOwner = await ensureResumeOwnerUser(params.user);
+
         const newResume = await prisma.resume.create({
             data: {
-                userId: params.user.id,
+                userId: resumeOwner.id,
                 fileName: form.fileName,
                 fileUrl: form.fileUrl,
                 filePublicId: form.filePublicId,
@@ -418,7 +459,7 @@ export async function createResumeFromUpload(params: {
     }
 
     const jsonResume = await saveResumeJsonFallback({
-        user: params.user,
+        user: resumeOwner,
         form,
         parsedText: extracted.parsedText,
         skills: finalSkills,
