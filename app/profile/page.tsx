@@ -33,9 +33,21 @@ export default function ProfilePage() {
     const [education, setEducation] = useState("");
     const [fieldOfStudy, setFieldOfStudy] = useState("");
     const [isStudent, setIsStudent] = useState(false);
+    const [accountRole, setAccountRole] = useState<string | null>(null);
+    const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
     const user = session?.user as any;
     const avatarInitials = getInitials(name || user?.name);
+
+    const effectiveRole = accountRole ?? user?.role ?? null;
+    const roleLabel =
+        effectiveRole === "ADMIN" && approvalStatus === "APPROVED"
+            ? "Admin / Recruiter"
+            : effectiveRole === "ADMIN"
+              ? "Admin"
+              : effectiveRole === "RECRUITER" || approvalStatus === "APPROVED"
+                ? "Recruiter"
+                : "Job Seeker";
 
     useEffect(() => {
         setName(user?.name ?? "");
@@ -51,6 +63,14 @@ export default function ProfilePage() {
                 const res = await fetch("/api/users/me", { cache: "no-store" });
                 const json = await res.json();
                 const profile = json?.data?.profile;
+                const dbRole = json?.data?.role;
+                const dbApprovalStatus = json?.data?.approvalStatus;
+                if (typeof dbRole === "string") {
+                    setAccountRole(dbRole);
+                }
+                if (typeof dbApprovalStatus === "string") {
+                    setApprovalStatus(dbApprovalStatus);
+                }
                 if (!profile) return;
 
                 setFirstName(profile.firstName ?? "");
@@ -148,7 +168,7 @@ export default function ProfilePage() {
                             )}
                             <h2 className="mt-4 text-xl font-semibold text-slate-900">{name || user?.name}</h2>
                             <span className="mt-1 inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                                {user?.role === "RECRUITER" ? "Recruiter" : user?.role === "ADMIN" ? "Admin" : "Job Seeker"}
+                                {roleLabel}
                             </span>
                             <p className="mt-2 text-sm text-slate-500">{user?.email}</p>
                         </Card>
@@ -204,7 +224,7 @@ export default function ProfilePage() {
                                         <input
                                             disabled
                                             type="text"
-                                            value={user?.role === "RECRUITER" ? "Recruiter" : user?.role === "ADMIN" ? "Admin" : "Job Seeker"}
+                                            value={roleLabel}
                                             className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-500 outline-none"
                                         />
                                     </div>

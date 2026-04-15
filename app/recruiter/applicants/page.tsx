@@ -54,7 +54,12 @@ export default function ApplicantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewApplicant, setPreviewApplicant] = useState<Applicant | null>(null);
+
+  const getApplicantResumeUrl = (applicant: Applicant, mode: "view" | "download") => {
+    const kind = applicant.type === "DIRECT_APPLICATION" ? "application" : "resume";
+    return `/api/recruiter/applicants/resume?kind=${kind}&id=${encodeURIComponent(applicant.resume.id)}&mode=${mode}`;
+  };
 
   const fetchApplicants = async () => {
     setIsLoading(true);
@@ -237,7 +242,7 @@ export default function ApplicantsPage() {
                   <div className="flex flex-col gap-2 min-w-[140px]">
                     <Button 
                       className="h-9 w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20" 
-                      onClick={() => setPreviewUrl(a.resume.fileUrl)}
+                      onClick={() => setPreviewApplicant(a)}
                     >
                       <Eye className="mr-2 h-4 w-4" /> View Resume
                     </Button>
@@ -248,7 +253,13 @@ export default function ApplicantsPage() {
                         <button className="text-slate-400 hover:text-indigo-600 transition-colors" title="Call Candidate">
                             <Phone className="h-4 w-4" />
                         </button>
-                        <a href={a.resume.fileUrl} download className="text-slate-400 hover:text-indigo-600 transition-colors" title="Download CV">
+                        <a
+                          href={getApplicantResumeUrl(a, "download")}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-400 hover:text-indigo-600 transition-colors"
+                          title="Download CV"
+                        >
                             <Download className="h-4 w-4" />
                         </a>
                     </div>
@@ -313,7 +324,7 @@ export default function ApplicantsPage() {
         )}
 
         {/* Resume Preview Modal */}
-        {previewUrl && (
+        {previewApplicant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-200">
             <Card className="relative flex flex-col h-full w-full max-w-5xl shadow-2xl p-0 overflow-hidden border-indigo-100 animate-in zoom-in-95 duration-300">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 bg-white/80 backdrop-blur-md">
@@ -325,19 +336,23 @@ export default function ApplicantsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Button variant="secondary" size="sm" asChild>
-                    <a href={previewUrl} target="_blank" rel="noreferrer">
+                    <a href={getApplicantResumeUrl(previewApplicant, "download")} target="_blank" rel="noreferrer">
+                      <Download className="mr-2 h-4 w-4" /> Download
+                    </a>
+                  </Button>
+                  <Button variant="secondary" size="sm" asChild>
+                    <a href={getApplicantResumeUrl(previewApplicant, "view")} target="_blank" rel="noreferrer">
                       <Eye className="mr-2 h-4 w-4" /> Open Original
                     </a>
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => setPreviewUrl(null)}>
+                  <Button variant="secondary" size="sm" onClick={() => setPreviewApplicant(null)}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               <div className="flex-1 bg-slate-50 relative">
-                {/* Fallback for browsers that don't support PDF embedding well */}
                 <iframe
-                  src={previewUrl}
+                  src={getApplicantResumeUrl(previewApplicant, "view")}
                   className="h-full w-full border-none"
                   title="Resume Preview"
                 />
