@@ -13,15 +13,15 @@ import { ErrorMessage } from "./ErrorMessage";
 import { withCsrfHeaders } from "../lib/client-security";
 
 const jobSchema = z.object({
-    title: z.string().min(5, "Job title must be at least 5 characters"),
-    company: z.string().min(2, "Company name is required"),
-    location: z.string().min(2, "Location is required"),
-    category: z.string().min(1, "Please select a category"),
-    type: z.string().min(1, "Please select a job type"),
-    salary: z.string().optional(),
-    deadline: z.string().optional(),
-    description: z.string().min(50, "Description must be at least 50 characters to provide enough detail"),
-    skills: z.array(z.string()).min(1, "At least one required skill must be added"),
+    title: z.string().trim().min(5, "Job title must be at least 5 characters"),
+    company: z.string().trim().min(2, "Company name is required"),
+    location: z.string().trim().min(2, "Location is required"),
+    category: z.string().trim().min(1, "Please select a category"),
+    type: z.string().trim().min(1, "Please select a job type"),
+    salary: z.string().trim().optional(),
+    deadline: z.string().trim().optional(),
+    description: z.string().trim().min(50, "Description must be at least 50 characters to provide enough detail"),
+    skills: z.array(z.string().trim().min(1)).min(1, "At least one required skill must be added"),
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -77,17 +77,34 @@ export function JobPostForm() {
     const onSubmit = async (data: JobFormValues) => {
         setIsLoading(true);
         try {
+            const payload = {
+                ...data,
+                title: data.title.trim(),
+                company: data.company.trim(),
+                location: data.location.trim(),
+                category: data.category.trim(),
+                type: data.type.trim(),
+                salary: data.salary?.trim() || undefined,
+                deadline: data.deadline?.trim() || undefined,
+                description: data.description.trim(),
+                skills: data.skills.map((skill) => skill.trim()).filter(Boolean),
+                source: "Internal",
+                experience: "Mid-level",
+            };
             const res = await fetch("/api/jobs", {
                 ...withCsrfHeaders({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
                 }),
             });
             const json = await res.json();
 
             if (!res.ok) {
-                throw new Error(json.error ?? "Failed to post job");
+                const detailMessage = json?.details?.fieldErrors
+                    ? Object.values(json.details.fieldErrors).flat().filter(Boolean)[0]
+                    : undefined;
+                throw new Error(detailMessage ?? json.error ?? "Failed to post job");
             }
 
             reset();

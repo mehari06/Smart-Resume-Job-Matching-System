@@ -116,12 +116,29 @@ export async function POST(request: NextRequest) {
 
         if (!parsed.success) {
             return NextResponse.json(
-                { error: "Invalid job payload" },
+                {
+                    error: "Invalid job payload",
+                    details: parsed.error.flatten(),
+                },
                 { status: 400 }
             );
         }
 
-        await syncSessionUser(auth.user);
+        let resolvedUser = auth.user;
+        try {
+            const syncedUser = await syncSessionUser(auth.user);
+            if (syncedUser?.id) {
+                resolvedUser = {
+                    ...auth.user,
+                    id: syncedUser.id,
+                    name: syncedUser.name ?? auth.user.name,
+                    email: syncedUser.email ?? auth.user.email,
+                    image: syncedUser.image ?? auth.user.image,
+                };
+            }
+        } catch (error) {
+            console.error("[POST /api/jobs] syncSessionUser failed", error);
+        }
 
         const rawDeadline =
             typeof parsed.data.deadline === "string" && parsed.data.deadline
@@ -142,7 +159,7 @@ export async function POST(request: NextRequest) {
                 category: parsed.data.category?.trim() || "Engineering",
                 experience: parsed.data.experience?.trim() || "Mid-level",
                 deadline,
-                postedById: auth.user.id,
+                postedById: resolvedUser.id,
             },
         });
 
