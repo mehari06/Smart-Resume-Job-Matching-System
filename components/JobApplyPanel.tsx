@@ -121,8 +121,15 @@ export function JobApplyPanel({ jobId }: Props) {
                 throw new Error(saveJson?.error ?? "Failed to save resume");
             }
 
-            await loadResumes();
-            setSelectedResumeId(saveJson.data.id);
+            const createdResume = saveJson.data as ResumeItem;
+            setResumes((current) => {
+                if (current.some((resume) => resume.id === createdResume.id)) {
+                    return current;
+                }
+                return [createdResume, ...current];
+            });
+            setSelectedResumeId(createdResume.id);
+            void loadResumes();
             toast.success("Resume uploaded. You can now apply to this job.");
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Upload failed");

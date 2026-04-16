@@ -69,3 +69,58 @@ export function getSignedResumeAssetUrl(filePublicId?: string | null, fallbackUr
         sign_url: true,
     });
 }
+
+function stripRawFileExtension(publicId: string) {
+    return publicId.replace(/\.(pdf|docx)$/i, "");
+}
+
+export function extractResumePublicIdFromUrl(url: string) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.hostname !== "res.cloudinary.com") {
+            return null;
+        }
+
+        const segments = parsed.pathname.split("/").filter(Boolean);
+        if (segments.length < 4) {
+            return null;
+        }
+
+        const resourceIndex = segments.findIndex((segment) => segment === "raw");
+        if (resourceIndex === -1 || resourceIndex + 1 >= segments.length) {
+            return null;
+        }
+
+        let startIndex = resourceIndex + 2; // skip `raw/<delivery-type>`
+
+        if (segments[startIndex]?.startsWith("s--") && segments[startIndex]?.endsWith("--")) {
+            startIndex += 1;
+        }
+
+        if (/^v\d+$/.test(segments[startIndex] ?? "")) {
+            startIndex += 1;
+        }
+
+        const publicId = segments.slice(startIndex).join("/");
+        if (!publicId) {
+            return null;
+        }
+
+        return stripRawFileExtension(publicId);
+    } catch {
+        return null;
+    }
+}
+
+export function getSignedResumeAssetUrlFromUrl(url?: string | null) {
+    if (!url) {
+        return "";
+    }
+
+    const publicId = extractResumePublicIdFromUrl(url);
+    if (!publicId) {
+        return url;
+    }
+
+    return getSignedResumeAssetUrl(publicId, url);
+}

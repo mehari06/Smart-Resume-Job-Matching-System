@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSessionUser, syncSessionUser } from "../../../../../lib/api-auth";
 import prisma from "../../../../../lib/prisma";
-import { getSignedResumeAssetUrl } from "../../../../../lib/cloudinary";
+import { getSignedResumeAssetUrl, getSignedResumeAssetUrlFromUrl } from "../../../../../lib/cloudinary";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,7 +45,7 @@ async function getApplicationResume(params: {
     }
 
     return {
-        url: application.resumeURL,
+        url: getSignedResumeAssetUrlFromUrl(application.resumeURL),
         fileName: getFileNameFromUrl(application.resumeURL, `application-${application.id}.pdf`),
     };
 }
@@ -130,6 +130,13 @@ export async function GET(request: NextRequest) {
 
         const upstream = await fetch(resolved.url, { cache: "no-store" });
         if (!upstream.ok) {
+            console.error("[recruiter] resume upstream failed", {
+                kind,
+                id,
+                mode,
+                status: upstream.status,
+                urlPreview: resolved.url.slice(0, 160),
+            });
             return NextResponse.json({ error: "Failed to load applicant resume" }, { status: 502 });
         }
 
