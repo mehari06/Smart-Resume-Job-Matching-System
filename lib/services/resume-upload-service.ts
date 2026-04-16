@@ -56,11 +56,18 @@ function safeParseStringArray(value: FormDataEntryValue | null) {
 
 function sanitizeTargetRole(value: unknown): string | undefined {
     if (typeof value !== "string") return undefined;
-    const normalized = value.trim();
+    const normalized = sanitizeTextForDatabase(value).trim();
     if (!normalized) return undefined;
     if (/^analyzing\.{0,3}$/i.test(normalized)) return undefined;
     if (/^unknown$/i.test(normalized)) return undefined;
     return normalized;
+}
+
+function sanitizeTextForDatabase(value: string) {
+    return value
+        .replace(/\u0000/g, "")
+        .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
+        .replace(/\s+/g, " ");
 }
 
 function escapeRegExp(value: string) {
@@ -142,12 +149,12 @@ async function extractTextFromBuffer(fileName: string, buffer: Buffer) {
         const mod = await import("pdf-parse");
         const pdfParse = (mod as any).default ?? mod;
         const result = await pdfParse(buffer);
-        return { text: String(result.text ?? ""), parser: "pdf-parse" as const };
+        return { text: sanitizeTextForDatabase(String(result.text ?? "")), parser: "pdf-parse" as const };
     }
 
     const mammoth = await import("mammoth");
     const result = await mammoth.extractRawText({ buffer });
-    return { text: String(result.value ?? ""), parser: "mammoth" as const };
+    return { text: sanitizeTextForDatabase(String(result.value ?? "")), parser: "mammoth" as const };
 }
 
 async function extractTextFromResume(params: {
@@ -316,7 +323,7 @@ async function maybeExtractSkills(params: {
             fileBuffer: params.fileBuffer,
         });
 
-        const parsedText = extracted.text.replace(/\s+/g, " ").trim().slice(0, 20000);
+        const parsedText = sanitizeTextForDatabase(extracted.text).trim().slice(0, 20000);
         const skills = parsedText ? extractSkillsFromText({ text: parsedText, knownSkills }) : [];
 
         return { skills, parsedText, parserUsed: extracted.parser };
@@ -429,7 +436,7 @@ export async function createResumeFromUpload(params: {
                 skills: finalSkills,
                 targetRole: form.targetRole,
                 experienceYears: form.experienceYears,
-                parsedText: extracted.parsedText || undefined,
+                parsedText: extracted.parsedText ? sanitizeTextForDatabase(extracted.parsedText).slice(0, 20000) : undefined,
             },
         });
 
