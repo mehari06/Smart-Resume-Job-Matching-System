@@ -2,13 +2,29 @@
 
 import { useState } from "react";
 import { Button } from "../../components/Button";
+import { sentryCaptureClientException } from "../../lib/sentry-client";
 
 export default function SentryExamplePage() {
-  const [hasTriggered, setHasTriggered] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
 
-  const triggerError = () => {
-    setHasTriggered(true);
-    throw new Error("Sentry example page test error");
+  const triggerError = async () => {
+    setStatus("sending");
+
+    try {
+      const error = new Error("Sentry example page test error");
+      await sentryCaptureClientException(error, {
+        tags: {
+          source: "sentry_example_page",
+          type: "manual_test",
+        },
+        extra: {
+          triggeredAt: new Date().toISOString(),
+        },
+      });
+      setStatus("sent");
+    } catch {
+      setStatus("idle");
+    }
   };
 
   return (
@@ -21,13 +37,21 @@ export default function SentryExamplePage() {
           Trigger a Test Error
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Use this page after deployment to confirm that frontend errors are reaching Sentry.
+          Use this page after deployment to confirm that frontend events are reaching Sentry
+          without crashing the page.
         </p>
         <div className="mt-6 flex justify-center">
           <Button onClick={triggerError}>
-            {hasTriggered ? "Triggering..." : "Throw Test Error"}
+            {status === "sending"
+              ? "Sending Test Event..."
+              : status === "sent"
+                ? "Sent to Sentry"
+                : "Send Test Error"}
           </Button>
         </div>
+        <p className="mt-4 text-xs text-slate-500">
+          Expected result: this page stays open, and you should see a new issue in Sentry.
+        </p>
       </div>
     </main>
   );
