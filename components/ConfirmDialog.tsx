@@ -7,14 +7,38 @@ import { Button } from "./Button";
 interface ConfirmDialogProps {
     title: string;
     description: string;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
     triggerElement: React.ReactNode;
     confirmLabel?: string;
+    pendingLabel?: string;
 }
 
-export function ConfirmDialog({ title, description, onConfirm, triggerElement, confirmLabel = "Delete" }: ConfirmDialogProps) {
+export function ConfirmDialog({
+    title,
+    description,
+    onConfirm,
+    triggerElement,
+    confirmLabel = "Delete",
+    pendingLabel = "Working...",
+}: ConfirmDialogProps) {
+    const [open, setOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        if (isSubmitting) return;
+
+        try {
+            setIsSubmitting(true);
+            await onConfirm();
+            setOpen(false);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <AlertDialog.Root>
+        <AlertDialog.Root open={open} onOpenChange={(nextOpen) => !isSubmitting && setOpen(nextOpen)}>
             <AlertDialog.Trigger asChild>
                 {triggerElement}
             </AlertDialog.Trigger>
@@ -29,13 +53,15 @@ export function ConfirmDialog({ title, description, onConfirm, triggerElement, c
                     </AlertDialog.Description>
                     <div className="mt-6 flex justify-end gap-3">
                         <AlertDialog.Cancel asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={isSubmitting}>Cancel</Button>
                         </AlertDialog.Cancel>
-                        <AlertDialog.Action asChild>
-                            <Button onClick={(e) => { e.preventDefault(); onConfirm(); }} className="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                                {confirmLabel}
-                            </Button>
-                        </AlertDialog.Action>
+                        <Button
+                            onClick={handleConfirm}
+                            loading={isSubmitting}
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                        >
+                            {isSubmitting ? pendingLabel : confirmLabel}
+                        </Button>
                     </div>
                 </AlertDialog.Content>
             </AlertDialog.Portal>

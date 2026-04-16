@@ -36,6 +36,10 @@ function cache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => TResult
     };
 }
 
+function noCache<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => TResult) {
+    return fn;
+}
+
 const loadJson = <T>(filename: string): T => {
     const filePath = path.join(process.cwd(), "data", `${filename}.json`);
     const raw = fs.readFileSync(filePath, "utf8");
@@ -205,7 +209,9 @@ export async function getJobCategories(): Promise<string[]> {
 
 // ─── Resumes ──────────────────────────────────────────────────────────────────
 
-export const getAllResumes = cache(async (): Promise<Resume[]> => {
+// Resume and match data are user-mutated frequently, so avoid cross-request memoization
+// in production or the UI can stay stale immediately after uploads/deletes.
+export const getAllResumes = noCache(async (): Promise<Resume[]> => {
     let allResumes: Resume[] = [];
     try {
         const resumes = await prisma.resume.findMany({
@@ -243,7 +249,7 @@ export const getAllResumes = cache(async (): Promise<Resume[]> => {
     }
 });
 
-export const getResumeById = cache(async (id: string): Promise<Resume | undefined> => {
+export const getResumeById = noCache(async (id: string): Promise<Resume | undefined> => {
     try {
         const resume = await prisma.resume.findUnique({
             where: { id },
@@ -266,7 +272,7 @@ export const getResumeById = cache(async (id: string): Promise<Resume | undefine
     return resumes.find((r: any) => r.id === id);
 });
 
-export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]> => {
+export const getResumesByUserId = noCache(async (userId: string): Promise<Resume[]> => {
     let allResumes: Resume[] = [];
     try {
         const resumes = await prisma.resume.findMany({
@@ -303,7 +309,7 @@ export const getResumesByUserId = cache(async (userId: string): Promise<Resume[]
 
 // ─── Matches ──────────────────────────────────────────────────────────────────
 
-export const getMatchesByResumeId = cache(async (resumeId: string): Promise<MatchResult | undefined> => {
+export const getMatchesByResumeId = noCache(async (resumeId: string): Promise<MatchResult | undefined> => {
     try {
         const matches = await prisma.match.findMany({
             where: { resumeId },

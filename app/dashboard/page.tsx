@@ -15,6 +15,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useResumes } from "../../hooks/useResumes";
 import { useQueryClient } from "@tanstack/react-query";
 import { withCsrfHeaders } from "../../lib/client-security";
+import type { Resume } from "../../types";
 
 // Removed static DEMO_RESUMES
 
@@ -22,10 +23,10 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [hasFile, setHasFile] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [activeResumeId, setActiveResumeId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingResumeId, setDeletingResumeId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const user = session?.user as any;
@@ -106,8 +107,15 @@ export default function DashboardPage() {
       }
 
       // 4. Update UI
+      const createdResume = dbData.data as Resume;
+      queryClient.setQueryData<Resume[]>(["resumes", user?.id], (current = []) => {
+        if (current.some((resume) => resume.id === createdResume.id)) {
+          return current;
+        }
+        return [createdResume, ...current];
+      });
       queryClient.invalidateQueries({ queryKey: ["resumes", user?.id] });
-      setActiveResumeId(dbData.data.id);
+      setActiveResumeId(createdResume.id);
       toast.success(`${file.name} uploaded successfully!`);
     } catch (e) {
       console.error(e);
@@ -118,15 +126,32 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
+    const previousResumes = queryClient.getQueryData<Resume[]>(["resumes", user?.id]) ?? [];
+    const deletedResume = previousResumes.find((resume) => resume.id === id);
+
     try {
+      setDeletingResumeId(id);
+      queryClient.setQueryData<Resume[]>(["resumes", user?.id], (current = []) =>
+        current.filter((resume) => resume.id !== id)
+      );
+      if (activeResumeId === id) setActiveResumeId(null);
+
       const res = await fetch(`/api/resumes/${id}`, withCsrfHeaders({ method: "DELETE" }));
       if (res.ok) {
         toast.success("Resume deleted");
-        queryClient.invalidateQueries({ queryKey: ["resumes", user?.id] });
-        if (activeResumeId === id) setActiveResumeId(null);
+        return;
       }
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload?.error ?? "Delete failed");
     } catch (e) {
-      toast.error("Delete failed");
+      queryClient.setQueryData<Resume[]>(["resumes", user?.id], previousResumes);
+      if (deletedResume && activeResumeId === null) {
+        setActiveResumeId(deletedResume.id);
+      }
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeletingResumeId(null);
+      queryClient.invalidateQueries({ queryKey: ["resumes", user?.id] });
     }
   };
 
@@ -310,12 +335,18 @@ export default function DashboardPage() {
                       title="Delete Resume?"
                       description={`Are you sure you want to delete ${resume.fileName}? This will also remove any saved match processing scores.`}
                       onConfirm={() => handleDelete(resume.id)}
+                      pendingLabel="Deleting..."
                       triggerElement={
                         <button
                           onClick={(e) => e.stopPropagation()}
+                          disabled={deletingResumeId === resume.id}
                           className="flex-shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          {deletingResumeId === resume.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </button>
                       }
                     />
