@@ -48,6 +48,13 @@ type Applicant = {
 
 const APPLICANTS_PER_PAGE = 8;
 
+function formatApplicantScore(applicant: Applicant) {
+  if (applicant.type === "DIRECT_APPLICATION" && applicant.score == null) {
+    return "Applied";
+  }
+  return `${(applicant.score ?? 0).toFixed(2)}%`;
+}
+
 export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -235,8 +242,16 @@ export default function ApplicantsPage() {
                 {/* Score & Actions */}
                 <div className="flex items-center gap-6 border-t border-slate-50 pt-4 md:border-none md:pt-0">
                   <div className="flex flex-col items-center gap-1">
-                    <CircularScore value={a.score ?? 0} className="scale-90" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Match</span>
+                    {a.type === "DIRECT_APPLICATION" && a.score == null ? (
+                      <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full border-4 border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Applied
+                      </div>
+                    ) : (
+                      <CircularScore value={a.score ?? 0} className="scale-90" />
+                    )}
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {formatApplicantScore(a)}
+                    </span>
                   </div>
                   
                   <div className="flex flex-col gap-2 min-w-[140px]">
@@ -351,6 +366,10 @@ export default function ApplicantsPage() {
                 </div>
               </div>
               <div className="flex-1 bg-slate-50 relative">
+                <div className="absolute left-4 right-4 top-4 z-10 rounded-xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-xs text-amber-800 shadow-sm">
+                  Inline resume preview can fail for some protected PDF providers and mobile browsers.
+                  If that happens, use <span className="font-semibold">Download</span> or <span className="font-semibold">Open Original</span> for now, and we can harden the in-browser viewer in a future update.
+                </div>
                 <iframe
                   src={getApplicantResumeUrl(previewApplicant, "view")}
                   className="h-full w-full border-none"

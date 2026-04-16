@@ -113,11 +113,11 @@ export const authOptions: NextAuthOptions = {
     useSecureCookies: process.env.NODE_ENV === "production",
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60,
+        maxAge: 25 * 60, // 25 minutes
+        updateAge: 5 * 60,
     },
     jwt: {
-        maxAge: 30 * 24 * 60 * 60,
+        maxAge: 25 * 60,
     },
     pages: {
         signIn: "/login",

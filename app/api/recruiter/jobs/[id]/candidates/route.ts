@@ -8,6 +8,14 @@ import { getSignedResumeAssetUrl } from "../../../../../../lib/cloudinary";
 
 export const dynamic = "force-dynamic";
 
+function normalizeRecruiterScore(score: number | null | undefined) {
+    if (typeof score !== "number" || Number.isNaN(score)) return 0;
+    if (score <= 1) {
+        return Math.round(score * 10000) / 100;
+    }
+    return Math.round(score * 100) / 100;
+}
+
 export async function GET(
     _request: NextRequest,
     { params }: { params: { id: string } }
@@ -107,7 +115,7 @@ export async function GET(
                 if (!resume) continue;
                 collected.push({
                     id: `${resumeId}-${params.id}`,
-                    score: Number(matchEntry.similarityScore ?? 0),
+                    score: normalizeRecruiterScore(Number(matchEntry.similarityScore ?? 0)),
                     rank: Number(matchEntry.rank ?? 0),
                     matchedSkills: matchEntry.matchedSkills ?? [],
                     missingSkills: matchEntry.missingSkills ?? [],
@@ -149,7 +157,7 @@ export async function GET(
                 const profile = await getAccountProfile(row.resume.userId);
                 return {
                     matchId: row.id,
-                    score: row.score,
+                    score: normalizeRecruiterScore(row.score),
                     rank: row.rank,
                     matchedSkills: row.matchedSkills,
                     missingSkills: row.missingSkills,

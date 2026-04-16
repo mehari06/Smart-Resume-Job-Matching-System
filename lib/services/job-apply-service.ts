@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../prisma";
 import { getAllJobs, getMatchesByResumeId, getResumeById } from "../data";
-import { getSignedResumeAssetUrl } from "../cloudinary";
 import { buildRankedMatches } from "../match-ranking";
 import { assertAllowedExternalResumeUrl } from "../validation";
 import { buildResumeText } from "./resume-text";
@@ -84,7 +83,8 @@ async function getOwnedResumeDetails(params: {
         email: resume.user.email?.trim()
             ? normalizeEmail(resume.user.email)
             : params.fallbackEmail,
-        resumeURL: getSignedResumeAssetUrl(resume.filePublicId, resume.fileUrl),
+        // Store the canonical asset URL so recruiter access can re-sign it server-side later.
+        resumeURL: resume.fileUrl,
     };
 }
 
