@@ -9,6 +9,8 @@ import { buildMatchesResumeText } from "./matches-resume-text";
 import { isOwnerOrAdmin, type SessionUser } from "../api-auth";
 
 const MATCH_THRESHOLD = 25;
+const MATCH_CACHE_TTL_MS = 15 * 60 * 1000;
+const ML_REQUEST_TIMEOUT_MS = 12000;
 
 function getResumeIdFromRequest(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -26,17 +28,29 @@ async function callMlService(params: {
     mlServiceApiKey?: string;
     resumeText: string;
 }) {
-    const response = await fetch(`${params.mlServiceUrl}/match`, {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            ...(params.mlServiceApiKey ? { "x-api-key": params.mlServiceApiKey } : {}),
-        },
-        body: JSON.stringify({ resume_text: params.resumeText }),
-        cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ML_REQUEST_TIMEOUT_MS);
+    try {
+        return await fetch(`${params.mlServiceUrl}/match`, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                ...(params.mlServiceApiKey ? { "x-api-key": params.mlServiceApiKey } : {}),
+            },
+            body: JSON.stringify({ resume_text: params.resumeText }),
+            cache: "no-store",
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timeout);
+    }
+}
 
-    return response;
+function isFreshComputedAt(value?: string | Date | null) {
+    if (!value) return false;
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return Date.now() - parsed.getTime() <= MATCH_CACHE_TTL_MS;
 }
 
 function uniqueByJobId<T extends { jobId?: string }>(matches: T[]): T[] {
@@ -180,6 +194,17 @@ export async function getMatchesResponse(request: NextRequest, user: SessionUser
             { error: "Resume has no parsed content yet. Re-upload to parse text first." },
             { status: 422 }
         );
+    }
+
+    const cachedResult = await getMatchesByResumeId(resumeId);
+    if (cachedResult?.matches?.length && isFreshComputedAt(cachedResult.computedAt)) {
+        return NextResponse.json({
+            data: {
+                ...cachedResult,
+                algorithm: cachedResult.algorithm ?? "SentenceTransformer + Cosine Similarity (cached)",
+            },
+            meta: { cached: true },
+        });
     }
 
     const jobs = await getAllJobs();

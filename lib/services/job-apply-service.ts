@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "../prisma";
-import { getAllJobs, getResumeById } from "../data";
+import { getAllJobs, getMatchesByResumeId, getResumeById } from "../data";
 import { getSignedResumeAssetUrl } from "../cloudinary";
 import { buildRankedMatches } from "../match-ranking";
 import { assertAllowedExternalResumeUrl } from "../validation";
 import { buildResumeText } from "./resume-text";
+
+const MATCH_CACHE_TTL_MS = 15 * 60 * 1000;
+const ML_REQUEST_TIMEOUT_MS = 12000;
 
 export type ApplyJobPayload = {
     applicantName?: string;
@@ -29,6 +32,13 @@ type ApplicantContext = {
 
 function normalizeEmail(email: string) {
     return email.trim().toLowerCase();
+}
+
+function isFreshComputedAt(value?: string | Date | null) {
+    if (!value) return false;
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return Date.now() - parsed.getTime() <= MATCH_CACHE_TTL_MS;
 }
 
 function buildApplicantIdentity(user: ApplyJobUser, payload: ApplyJobPayload) {
@@ -430,17 +440,44 @@ async function computeMatchesForResume(params: { resumeId: string; userId: strin
 
     const mlServiceApiKey = process.env.ML_SERVICE_API_KEY ?? process.env.FASTAPI_API_KEY;
     const resumeText = buildResumeText(resume);
-    const jobs = await getAllJobs();
+    const cachedResult = await getMatchesByResumeId(params.resumeId);
+    if (cachedResult?.matches?.length && isFreshComputedAt(cachedResult.computedAt)) {
+        return {
+            ok: true as const,
+            resume,
+            resumeText,
+            rankedMatches: cachedResult.matches.map((match) => ({
+                jobId: match.jobId,
+                jobTitle: match.jobTitle,
+                company: match.company,
+                similarityScore: match.similarityScore,
+                rank: match.rank,
+                matchedSkills: match.matchedSkills,
+                missingSkills: match.missingSkills,
+                explanation: match.explanation ?? "Cached ML match",
+            })),
+        };
+    }
 
-    const mlServiceResponse = await fetch(`${mlServiceUrl}/match`, {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            ...(mlServiceApiKey ? { "x-api-key": mlServiceApiKey } : {}),
-        },
-        body: JSON.stringify({ resume_text: resumeText }),
-        cache: "no-store",
-    });
+    const jobs = await getAllJobs();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ML_REQUEST_TIMEOUT_MS);
+
+    let mlServiceResponse: Response;
+    try {
+        mlServiceResponse = await fetch(`${mlServiceUrl}/match`, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                ...(mlServiceApiKey ? { "x-api-key": mlServiceApiKey } : {}),
+            },
+            body: JSON.stringify({ resume_text: resumeText }),
+            cache: "no-store",
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timeout);
+    }
 
     if (!mlServiceResponse.ok) {
         return {
