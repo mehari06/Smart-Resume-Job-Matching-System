@@ -161,8 +161,86 @@ function buildRecommendations(matches: Array<{
     }));
 }
 
+function normalize(value: string | null | undefined) {
+    return (value ?? "").trim().toLowerCase();
+}
+
+function computeMatchedAndMissingSkills(jobSkills: string[] = [], resumeSkills: string[] = [], resumeText = "") {
+    const normalizedResumeSkills = new Set(resumeSkills.map((skill) => normalize(skill)));
+    const normalizedResumeText = normalize(resumeText);
+
+    const matchedSkills: string[] = [];
+    const missingSkills: string[] = [];
+
+    for (const rawSkill of jobSkills) {
+        const skill = rawSkill.trim();
+        if (!skill) continue;
+        const normalizedSkill = normalize(skill);
+
+        if (normalizedResumeSkills.has(normalizedSkill) || normalizedResumeText.includes(normalizedSkill)) {
+            matchedSkills.push(skill);
+        } else {
+            missingSkills.push(skill);
+        }
+    }
+
+    return {
+        matchedSkills,
+        missingSkills: missingSkills.slice(0, 8),
+    };
+}
+
+function computeSpecificJobFitEstimate(params: {
+    job: { title: string; category?: string | null; skills?: string[]; description?: string | null; company: string; id: string };
+    resumeText: string;
+    resumeSkills: string[];
+}) {
+    const { matchedSkills, missingSkills } = computeMatchedAndMissingSkills(
+        params.job.skills ?? [],
+        params.resumeSkills,
+        params.resumeText
+    );
+
+    const titleTokens = normalize(params.job.title)
+        .split(/[^a-z0-9]+/)
+        .filter((token) => token.length >= 4);
+    const descriptionTokens = normalize(params.job.description)
+        .split(/[^a-z0-9]+/)
+        .filter((token) => token.length >= 6)
+        .slice(0, 18);
+    const resumeText = normalize(params.resumeText);
+
+    const titleMatches = titleTokens.filter((token) => resumeText.includes(token)).length;
+    const descriptionMatches = descriptionTokens.filter((token) => resumeText.includes(token)).length;
+
+    const skillCoverage =
+        (matchedSkills.length / Math.max((params.job.skills ?? []).length, 1)) * 100;
+    const titleCoverage = titleTokens.length > 0 ? (titleMatches / titleTokens.length) * 100 : 0;
+    const descriptionCoverage =
+        descriptionTokens.length > 0 ? (descriptionMatches / descriptionTokens.length) * 100 : 0;
+
+    const estimatedScore = Math.max(
+        12,
+        Math.min(
+            96,
+            Math.round(skillCoverage * 0.55 + titleCoverage * 0.3 + descriptionCoverage * 0.15)
+        )
+    );
+
+    return {
+        jobId: params.job.id,
+        jobTitle: params.job.title,
+        company: params.job.company,
+        similarityScore: estimatedScore,
+        rank: 0,
+        matchedSkills,
+        missingSkills,
+        explanation: "Specific-job fit estimate based on your resume content and this job's requirements.",
+    };
+}
+
 function buildTargetMatch(params: {
-    job: { title: string };
+    job: { id: string; title: string; company: string; category?: string | null; skills?: string[]; description?: string | null };
     jobId: string;
     rankedMatches: any[];
     resumeText: string;
@@ -171,16 +249,23 @@ function buildTargetMatch(params: {
     const match = params.rankedMatches.find((item) => item.jobId === params.jobId);
     if (match) return match;
 
-    const fallbackMatches = buildRankedMatches({
-        raw: [{ job_title: params.job.title, score: 0.1 }],
-        jobs: [params.job as any],
+    const titleMatchedRecommendation = params.rankedMatches.find(
+        (item) => normalize(item.jobTitle) === normalize(params.job.title)
+    );
+    if (titleMatchedRecommendation) {
+        return {
+            ...titleMatchedRecommendation,
+            jobId: params.job.id,
+            company: params.job.company,
+            explanation: `${titleMatchedRecommendation.explanation} (matched to this specific job by title)`,
+        };
+    }
+
+    return computeSpecificJobFitEstimate({
+        job: params.job,
         resumeText: params.resumeText,
         resumeSkills: params.resumeSkills,
-        threshold: 0,
-        minFallback: 1,
     });
-
-    return fallbackMatches[0];
 }
 
 function getSafeTargetMatch(params: {
@@ -199,7 +284,7 @@ function getSafeTargetMatch(params: {
         rank: 0,
         matchedSkills: [],
         missingSkills: [],
-        explanation: "Fallback match",
+        explanation: "No score available",
     };
 }
 
